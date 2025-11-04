@@ -2,110 +2,141 @@ import { AppStorageV2, PersistenceV2, uiObserver } from '@kit.ArkUI'
 import { curves } from '@kit.ArkUI';
 import { Setting } from '../model/Setting';
 
-class NotStartedState {
-  type: "stopped" = "stopped"
-}
-
-class RunningState {
-  type: "running" = "running"
+interface Running {
+  type: 'running';
   elapsedTime: number;
   totalTime: number;
-
-  constructor(elapsedTime: number, totalTime: number) {
-    this.elapsedTime = elapsedTime;
-    this.totalTime = totalTime
-  }
 }
 
-class PausedState {
-  type: "paused" = "paused"
+interface Paused {
+  type: 'paused';
   elapsedTime: number;
   totalTime: number;
-
-  constructor(elapsedTime: number, totalTime: number) {
-    this.elapsedTime = elapsedTime;
-    this.totalTime = totalTime
-  }
 }
 
-type NormalState = NotStartedState | RunningState | PausedState;
-
-class TransitionState {
-  type: "transition" = "transition"
-  from: PomodoroState
-  to: PomodoroState
-
-  constructor(from: PomodoroState, to: PomodoroState) {
-    this.from = from
-    this.to = to
-  }
+interface Stopped {
+  type: 'stopped';
 }
 
-type PomodoroState = TransitionState | NormalState
+interface Transition {
+  type: 'transition';
+  from: PomodoroState;
+  to: PomodoroState;
+}
+
+type PomodoroState = Running | Paused | Stopped | Transition
 
 @ComponentV2
 struct Pomodoro {
   @Local isShowScaleBorder: boolean = false
-  @Local state: PomodoroState = new RunningState(30 * 1000, 60 * 1000)
+  @Local state: PomodoroState = { type: 'stopped' }
   @Local settings: Setting = PersistenceV2.globalConnect({ type: Setting, defaultCreator: () => new Setting() })!
-  private context: CanvasRenderingContext2D = new CanvasRenderingContext2D(new RenderingContextSettings(true))
+  private pomodoroContext: CanvasRenderingContext2D = new CanvasRenderingContext2D(new RenderingContextSettings(true))
+  private tickContext: CanvasRenderingContext2D = new CanvasRenderingContext2D(new RenderingContextSettings(true))
+  private tickTimer?: number
+  private static readonly DURATION_MS: number = 15 * 1000 //60 * 1000
+  private static readonly TICK_MS: number = 33
+  private static readonly REVERSE_STEPS: number = 30
+
+  private clearTimer() {
+    if (this.tickTimer !== undefined) {
+      this.tickTimer = undefined
+    }
+  }
+
+  private schedule(fn: () => void) {
+    this.tickTimer = setTimeout(fn, Pomodoro.TICK_MS)
+  }
+
+  private drawProgress(elapsed: number, total: number) {
+    let remaining = total - elapsed
+    drawCircle(this.pomodoroContext, 0, (remaining / total) * 360, Color.White)
+  }
+
+  private startTicking() {
+    const tick = () => {
+      if (this.state.type !== 'running') {
+        this.clearTimer()
+        return
+      }
+      if (this.state.elapsedTime >= this.state.totalTime) {
+        this.state = { type: 'stopped' }
+        this.clearTimer()
+        return
+      }
+      this.state.elapsedTime += Pomodoro.TICK_MS
+      this.drawProgress(this.state.elapsedTime, this.state.totalTime)
+      this.schedule(tick)
+    }
+    this.schedule(tick)
+  }
+
+  private scheduleAnimation(from: number, to: number, total: number, callback?: () => void) {
+    let current = from;
+    let isReverse = from > to;
+    const delta = total / Pomodoro.REVERSE_STEPS
+    const tick = () => {
+      if (isReverse) {
+        if (current > to) {
+          current = Math.max(to, current - delta)
+          this.drawProgress(current, total)
+          this.schedule(tick)
+        } else {
+          callback && callback()
+        }
+      } else {
+        if (current < to) {
+          current = Math.min(to, current + delta)
+          this.drawProgress(current, total)
+          this.schedule(tick)
+        } else {
+          callback && callback()
+        }
+      }
+    }
+    this.schedule(tick)
+  }
 
   @Monitor('state')
   onStatusChanged(monitor: IMonitor) {
+    let before = monitor.value<PomodoroState>('state')!.before
     let after = monitor.value<PomodoroState>('state')!.now
 
-    if (after.type === 'running') {
+    this.clearTimer()
+    if (before.type === 'transition' && (after.type === 'running' || after.type === 'stopped')) {
+      this.isShowScaleBorder = true
+    } else {
       this.isShowScaleBorder = false
-      let fn = () => {
-        if (this.state.type === 'running') {
-          let s = this.state as RunningState
-          if (s.elapsedTime >= s.totalTime) {
-            this.state = new NotStartedState()
-          } else {
-            s.elapsedTime += 33;
-            drawCircle(this.context,
-              0, (s.elapsedTime / s.totalTime) * 360, Color.White)
-            setTimeout(fn, 33);
-          }
-        }
-      }
-      setTimeout(fn, 33)
-    } else if (after.type === 'paused') {
+    }
+
+    if (after.type === 'running') {
+      this.startTicking()
     } else if (after.type === 'transition') {
-      let from = after.from
-      let to = after.to
+      const from = after.from
+      const to = after.to
       if (from.type === 'running' || from.type === 'paused') {
-        let elapsedTime = from.elapsedTime
-        let totalTime = from.totalTime
-        let delta = totalTime / 30
-        let fn = () => {
-          if (elapsedTime > 0) {
-            elapsedTime = Math.max(0, elapsedTime - delta)
-            drawCircle(this.context,
-              0, (elapsedTime / totalTime) * 360, Color.White)
-            setTimeout(fn, 33);
-          } else {
-            this.state = to
-          }
-        }
-        setTimeout(fn, 33)
+        this.scheduleAnimation(from.elapsedTime, from.totalTime, from.totalTime, () => {
+          this.state = to
+        })
+      } else if (from.type === 'stopped' && to.type === 'running') {
+        this.scheduleAnimation(to.totalTime, 0, to.totalTime, () => {
+          this.state = to
+        })
       }
+    } else if (after.type === 'paused') {
+      // no ticking while paused
     }
   }
 
   @Builder
   buildRunning() {
-    Canvas(this.context)
-      .width('100%')
-      .height('100%')
-      .opacity(this.state.type !== 'paused' ? 1.0 : 0.5)
-      .animation({ curve: curves.springMotion(0.2) })
-      .onReady(() => {
-        if (this.state.type === 'paused' || this.state.type === "running") {
-          drawCircle(this.context,
-            0, (this.state.elapsedTime / this.state.totalTime) * 360, Color.White)
-        }
-      })
+    if (this.state.type !== 'stopped') {
+      Canvas(this.pomodoroContext)
+        .width('100%')
+        .height('100%')
+        .opacity(this.state.type !== 'paused' ? 1.0 : 0.5)
+        .animation({ curve: curves.springMotion(0.2) })
+    }
   }
 
   build() {
@@ -115,7 +146,7 @@ struct Pomodoro {
       }
       .alignItems(HorizontalAlign.Center)
       .justifyContent(FlexAlign.Center)
-      .padding(8)
+      .padding(16)
       .borderWidth(8)
       .borderRadius('50%')
       .borderColor(Color.Transparent)
@@ -136,49 +167,77 @@ struct Pomodoro {
           .transition(TransitionEffect.OPACITY.animation({ curve: curves.springMotion() }))
       }
 
-      if (this.isShowScaleBorder) {
-        Column()
-          .width('100%')
-          .height('100%')
-          .borderColor(Color.White)
-          .borderWidth(8)
-          .borderRadius('50%')
-          .transition(TransitionEffect.scale({ x: 0, y: 0 }).animation({ curve: curves.springMotion(0.6, 1.2) }))
-      } else {
-        Column()
-          .width('100%')
-          .height('100%')
-          .borderColor(Color.White)
-          .borderWidth(8)
-          .borderRadius('50%')
+      Stack() {
+        Shape() {
+          ForEach(Array.from({ length: this.settings.pomodoro }, (_: number, i) => i), (index: number) => {
+            const angle = index * (360 / this.scaleCount)
+            const radian = angle * Math.PI / 180
+            Path()
+              .commands(`M${this.calcInnerPoint(radian)} L${this.calcOuterPoint(radian)}`)
+              .strokeWidth(2)
+              .stroke(Color.Black)
+          })
+        }
+        .fill(Color.Transparent)
+        .stroke(8)
+        .strokeDashArray([8])
+        .width('100%')
+        .height('100%')
+
+        Column() {
+          Column()
+            .width('100%')
+            .height('100%')
+            .borderColor(Color.White)
+            .borderWidth(8)
+            .borderRadius('50%')
+        }
+        .padding(8)
+        .width('100%')
+        .height('100%')
       }
-    }
-    .gesture(
-      LongPressGesture()
-        .onAction((event) => {
-          if (this.state.type !== 'transition') {
-            if (this.state.type === "running" || this.state.type === "paused") {
-              let transition = new TransitionState(this.state, new NotStartedState())
-              this.state = transition
+      .width('100%')
+      .height('100%')
+      .transition(this.isShowScaleBorder ? TransitionEffect.asymmetric(TransitionEffect.scale({ x: 1.05, y: 1.05 })
+        .animation({ curve: curves.springMotion() }), TransitionEffect.IDENTITY) : TransitionEffect.IDENTITY)
+      .gesture(
+        LongPressGesture()
+          .onAction((event) => {
+            if (this.state.type !== 'transition') {
+              if (this.state.type === 'running' || this.state.type === 'paused') {
+                this.state = { type: 'transition', from: this.state, to: { type: 'stopped' } }
+              }
             }
+          })
+      )
+      .gesture(TapGesture()
+        .onAction((event) => {
+          if (this.state.type === 'stopped') {
+            this.state = {
+              type: 'transition',
+              from: this.state,
+              to: {
+                type: 'running',
+                elapsedTime: 0, totalTime: this.settings.pomodoro * Pomodoro.DURATION_MS
+              }
+            }
+          } else if (this.state.type === 'running') {
+            this.state = { type: 'paused', elapsedTime: this.state.elapsedTime, totalTime: this.state.totalTime }
+          } else if (this.state.type === 'paused') {
+            this.state = { type: 'running', elapsedTime: this.state.elapsedTime, totalTime: this.state.totalTime }
           }
         })
-    ).gesture(TapGesture()
-      .onAction((event) => {
-        if (this.state.type === "stopped") {
-          this.state = new RunningState(0, 60 * 1000)
-        } else if (this.state.type === 'running') {
-          let paused = new PausedState(this.state.elapsedTime, this.state.totalTime)
-          this.state = paused;
-        } else if (this.state.type === 'paused') {
-          let running = new RunningState(this.state.elapsedTime, this.state.totalTime)
-          this.state = running
-        }
-      })
-    )
+      )
+    }
     .width('60%')
     .aspectRatio(1) // 强制宽高比1:1
   }
+}
+
+// 极坐标转笛卡尔坐标
+function calcPoint(angle: number, r: number, centerX: number, centerY: number): Array<number> {
+  const radian = angle * Math.PI / 180
+  return [centerX + r * Math.sin(radian), centerY - r * Math.cos(radian)]
 }
 
 function drawCircle(context: CanvasRenderingContext2D, startAngle: number, endAngle: number, color: Color) {
