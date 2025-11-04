@@ -1,11 +1,12 @@
-import { AppStorageV2, uiObserver } from '@kit.ArkUI'
+import { AppStorageV2, PersistenceV2, uiObserver } from '@kit.ArkUI'
 import { curves } from '@kit.ArkUI';
+import { Setting } from '../model/Setting';
 
-class ClockStopped {
+class NotStartedState {
   type: "stopped" = "stopped"
 }
 
-class ClockRunning {
+class RunningState {
   type: "running" = "running"
   elapsedTime: number;
   totalTime: number;
@@ -16,7 +17,7 @@ class ClockRunning {
   }
 }
 
-class ClockPaused {
+class PausedState {
   type: "paused" = "paused"
   elapsedTime: number;
   totalTime: number;
@@ -27,58 +28,39 @@ class ClockPaused {
   }
 }
 
-type StatusType = ClockStopped | ClockRunning | ClockPaused;
+type NormalState = NotStartedState | RunningState | PausedState;
 
-// @ObservedV2
-// class ClockStatus {
-//   @Trace status:StatusType
-//   constructor(status:StatusType) {
-//     this.status = status
-//   }
-// }
+class TransitionState {
+  type: "transition" = "transition"
+  from: PomodoroState
+  to: PomodoroState
 
-
-@ComponentV2
-struct ClockOutline {
-  build() {
-    Column() {
-      this.customBuilderParam()
-    }
-    .width('80%')
-    .aspectRatio(1) // 强制宽高比1:1
-    .padding(8)
-    .alignItems(HorizontalAlign.Center)
-    .justifyContent(FlexAlign.Center)
-    .borderColor(Color.Black)
-    .borderWidth(8)
-    .borderRadius('50%')
+  constructor(from: PomodoroState, to: PomodoroState) {
+    this.from = from
+    this.to = to
   }
-
-  @Builder
-  doNothing() {
-  }
-
-  @BuilderParam customBuilderParam: () => void = this.doNothing;
 }
 
-@ComponentV2
-struct Clock {
-  @Local scaleAnimation: boolean = false
-  @Local status: StatusType = new ClockStopped()
-  private settings: RenderingContextSettings = new RenderingContextSettings(true)
-  private context: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.settings)
+type PomodoroState = TransitionState | NormalState
 
-  @Monitor('status')
+@ComponentV2
+struct Pomodoro {
+  @Local isShowScaleBorder: boolean = false
+  @Local state: PomodoroState = new RunningState(30 * 1000, 60 * 1000)
+  @Local settings: Setting = PersistenceV2.globalConnect({ type: Setting, defaultCreator: () => new Setting() })!
+  private context: CanvasRenderingContext2D = new CanvasRenderingContext2D(new RenderingContextSettings(true))
+
+  @Monitor('state')
   onStatusChanged(monitor: IMonitor) {
-    let before = monitor.value<StatusType>('status')!.before
-    let after = monitor.value<StatusType>('status')!.now
+    let after = monitor.value<PomodoroState>('state')!.now
 
     if (after.type === 'running') {
+      this.isShowScaleBorder = false
       let fn = () => {
-        if (this.status.type === 'running') {
-          let s = this.status as ClockRunning
+        if (this.state.type === 'running') {
+          let s = this.state as RunningState
           if (s.elapsedTime >= s.totalTime) {
-            this.status = new ClockStopped()
+            this.state = new NotStartedState()
           } else {
             s.elapsedTime += 33;
             drawCircle(this.context,
@@ -89,26 +71,47 @@ struct Clock {
       }
       setTimeout(fn, 33)
     } else if (after.type === 'paused') {
+    } else if (after.type === 'transition') {
+      let from = after.from
+      let to = after.to
+      if (from.type === 'running' || from.type === 'paused') {
+        let elapsedTime = from.elapsedTime
+        let totalTime = from.totalTime
+        let delta = totalTime / 30
+        let fn = () => {
+          if (elapsedTime > 0) {
+            elapsedTime = Math.max(0, elapsedTime - delta)
+            drawCircle(this.context,
+              0, (elapsedTime / totalTime) * 360, Color.White)
+            setTimeout(fn, 33);
+          } else {
+            this.state = to
+          }
+        }
+        setTimeout(fn, 33)
+      }
     }
   }
 
   @Builder
-  buildRunning(status: ClockRunning | ClockPaused) {
+  buildRunning() {
     Canvas(this.context)
       .width('100%')
       .height('100%')
-      .opacity(this.status.type !== 'paused' ? 1.0 : 0.5)
+      .opacity(this.state.type !== 'paused' ? 1.0 : 0.5)
       .animation({ curve: curves.springMotion(0.2) })
-      .onReady(() => drawCircle(this.context,
-        0, (status.elapsedTime / status.totalTime) * 360, Color.White))
+      .onReady(() => {
+        if (this.state.type === 'paused' || this.state.type === "running") {
+          drawCircle(this.context,
+            0, (this.state.elapsedTime / this.state.totalTime) * 360, Color.White)
+        }
+      })
   }
 
   build() {
     Stack() {
       Column() {
-        if (this.status.type === "running" || this.status.type === 'paused') {
-          this.buildRunning(this.status)
-        }
+        this.buildRunning()
       }
       .alignItems(HorizontalAlign.Center)
       .justifyContent(FlexAlign.Center)
@@ -119,40 +122,60 @@ struct Clock {
       .width('100%')
       .height('100%')
 
-      if (this.status.type === 'paused') {
+      if (this.state.type === 'paused') {
         Image($r('app.media.pause'))
           .width('30%')
           .height('30%')
           .fillColor(Color.White)
-          .transition(TransitionEffect.OPACITY.animation({curve: curves.springMotion()}))
+          .transition(TransitionEffect.OPACITY.animation({ curve: curves.springMotion() }))
+      } else if (this.state.type === 'stopped') {
+        Image($r('app.media.play'))
+          .width('30%')
+          .height('30%')
+          .fillColor(Color.White)
+          .transition(TransitionEffect.OPACITY.animation({ curve: curves.springMotion() }))
       }
 
-      Column()
-        .width('100%')
-        .height('100%')
-        .borderColor(Color.White)
-        .borderWidth(8)
-        .borderRadius('50%')
-        .scale({ x: this.scaleAnimation ? 1.09 : 1, y: this.scaleAnimation ? 1.09 : 1 })
-        .animation({
-          curve: curves.springMotion(0.1), onFinish: () => {
-            if (this.scaleAnimation) {
-              this.scaleAnimation = false
+      if (this.isShowScaleBorder) {
+        Column()
+          .width('100%')
+          .height('100%')
+          .borderColor(Color.White)
+          .borderWidth(8)
+          .borderRadius('50%')
+          .transition(TransitionEffect.scale({ x: 0, y: 0 }).animation({ curve: curves.springMotion(0.6, 1.2) }))
+      } else {
+        Column()
+          .width('100%')
+          .height('100%')
+          .borderColor(Color.White)
+          .borderWidth(8)
+          .borderRadius('50%')
+      }
+    }
+    .gesture(
+      LongPressGesture()
+        .onAction((event) => {
+          if (this.state.type !== 'transition') {
+            if (this.state.type === "running" || this.state.type === "paused") {
+              let transition = new TransitionState(this.state, new NotStartedState())
+              this.state = transition
             }
           }
         })
-        .onClick(() => {
-          if (this.status.type === "stopped") {
-            this.status = new ClockRunning(0, 60 * 1000)
-          } else if (this.status.type === 'running') {
-            let paused = new ClockPaused(this.status.elapsedTime, this.status.totalTime)
-            this.status = paused;
-          } else if (this.status.type === 'paused') {
-            let running = new ClockRunning(this.status.elapsedTime, this.status.totalTime)
-            this.status = running
-          }
-        })
-    }
+    ).gesture(TapGesture()
+      .onAction((event) => {
+        if (this.state.type === "stopped") {
+          this.state = new RunningState(0, 60 * 1000)
+        } else if (this.state.type === 'running') {
+          let paused = new PausedState(this.state.elapsedTime, this.state.totalTime)
+          this.state = paused;
+        } else if (this.state.type === 'paused') {
+          let running = new RunningState(this.state.elapsedTime, this.state.totalTime)
+          this.state = running
+        }
+      })
+    )
     .width('60%')
     .aspectRatio(1) // 强制宽高比1:1
   }
@@ -165,20 +188,26 @@ function drawCircle(context: CanvasRenderingContext2D, startAngle: number, endAn
   const centerX = width / 2
   const centerY = height / 2
   const radius = Math.min(width, height) / 2 // 取短边为最大半径
+  context.clearRect(0, 0, context.width, context.height)
 
-  // 扇形参数设置（示例绘制120度扇形）
-  const startRad = startAngle * Math.PI / 180 - Math.PI / 2
-  const endRad = endAngle * Math.PI / 180 - Math.PI / 2
+  if (startAngle == endAngle) {
+    return
+  } else {
 
-  // 绘制路径
-  context.beginPath()
-  context.moveTo(centerX, centerY)
-  context.arc(centerX, centerY, radius, startRad, endRad)
-  context.closePath()
+    // 扇形参数设置（示例绘制120度扇形）
+    const startRad = startAngle * Math.PI / 180 - Math.PI / 2
+    const endRad = endAngle * Math.PI / 180 - Math.PI / 2
 
-  // 填充样式设置
-  context.fillStyle = color.toString() // 设置填充颜色
-  context.fill()
+    // 绘制路径
+    context.beginPath()
+    context.moveTo(centerX, centerY)
+    context.arc(centerX, centerY, radius, startRad, endRad)
+    context.closePath()
+
+    // 填充样式设置
+    context.fillStyle = color.toString() // 设置填充颜色
+    context.fill()
+  }
 }
 
 
@@ -187,7 +216,7 @@ function drawCircle(context: CanvasRenderingContext2D, startAngle: number, endAn
 export default struct Index {
   build() {
     Column() {
-      Clock()
+      Pomodoro()
     }
     .alignItems(HorizontalAlign.Center)
     .backgroundColor(Color.Pink)
