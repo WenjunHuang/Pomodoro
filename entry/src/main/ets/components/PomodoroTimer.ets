@@ -1,6 +1,5 @@
-import { AppStorageV2, PersistenceV2, uiObserver } from '@kit.ArkUI'
 import { curves } from '@kit.ArkUI';
-import { Setting } from '../model/Setting';
+import { drawCircleSector, drawTicks } from '../utils/DrawingUtils';
 
 interface Running {
   type: 'running';
@@ -31,7 +30,7 @@ interface Transition {
 type PomodoroState = Running | Paused | Stopped | Finished | Transition
 
 @ObservedV2
-class CircleBorderBouncingModifier implements AttributeModifier<CommonAttribute> {
+class BouncingBorderModifier implements AttributeModifier<CommonAttribute> {
   @Trace isBouncing: boolean = false
 
   constructor(isBouncing?: boolean) {
@@ -48,7 +47,7 @@ class CircleBorderBouncingModifier implements AttributeModifier<CommonAttribute>
 }
 
 @ComponentV2
-struct Pomodoro {
+export struct PomodoroTimer {
   @Param onFinished?: () => void = undefined
   @Param onPaused?: (elapsedTimeMS: number) => void = undefined
   @Param onCancelled?: () => void = undefined
@@ -63,8 +62,8 @@ struct Pomodoro {
   private tickContext: CanvasRenderingContext2D = new CanvasRenderingContext2D(new RenderingContextSettings(true))
   private tickTimer?: number
   private static readonly FPS: number = 90
-  private static readonly TICK_MS: number = 1000 / Pomodoro.FPS // fps: 90
-  private static readonly CIRCLE_STEPS: number = Math.floor(Pomodoro.FPS / 2) // 因为每秒90帧，所以45帧等于半秒
+  private static readonly TICK_MS: number = 1000 / PomodoroTimer.FPS // fps: 90
+  private static readonly CIRCLE_STEPS: number = Math.floor(PomodoroTimer.FPS / 2) // 因为每秒90帧，所以45帧等于半秒
 
   private clearTimer() {
     if (this.tickTimer !== undefined) {
@@ -73,7 +72,7 @@ struct Pomodoro {
   }
 
   private schedule(fn: () => void) {
-    this.tickTimer = setTimeout(fn, Pomodoro.TICK_MS)
+    this.tickTimer = setTimeout(fn, PomodoroTimer.TICK_MS)
   }
 
   private drawProgress(elapsed: number, total: number) {
@@ -92,7 +91,7 @@ struct Pomodoro {
         this.clearTimer()
         return
       }
-      this.state.elapsedTimeMS += Pomodoro.TICK_MS
+      this.state.elapsedTimeMS += PomodoroTimer.TICK_MS
       this.drawProgress(this.state.elapsedTimeMS, this.state.totalTimeMS)
       this.onRunning && this.onRunning(this.state.elapsedTimeMS, this.state.totalTimeMS)
       this.schedule(tick)
@@ -103,7 +102,7 @@ struct Pomodoro {
   private scheduleCycleAnimation(from: number, to: number, total: number, callback?: () => void) {
     let current = from;
     let isReverse = from > to;
-    const delta = total / Pomodoro.CIRCLE_STEPS
+    const delta = total / PomodoroTimer.CIRCLE_STEPS
     const tick = () => {
       if (isReverse) {
         if (current > to) {
@@ -278,86 +277,5 @@ struct Pomodoro {
         }
       })
     )
-  }
-}
-
-function drawTicks(context: CanvasRenderingContext2D, ticksCount: number, tickLength: number, color: Color) {
-  // 获取Canvas实际绘制尺寸
-  const width = context.width
-  const height = context.height
-  const centerX = width / 2
-  const centerY = height / 2
-  const radius = Math.min(width, height) / 2 // 取短边为最大半径
-  if (ticksCount <= 0) {
-    return
-  }
-
-  context.beginPath()
-  for (let index = 0; index < ticksCount; index++) {
-    const theta = index * (2 * Math.PI / ticksCount)
-    const fromX = centerX - (radius - tickLength) * Math.sin(theta)
-    const fromY = centerY - (radius - tickLength) * Math.cos(theta)
-    const toX = centerX - radius * Math.sin(theta)
-    const toY = centerY - radius * Math.cos(theta)
-    context.moveTo(fromX, fromY)
-    context.lineTo(toX, toY)
-  }
-  context.closePath()
-
-  // 填充样式设置
-  context.lineWidth = 2
-  context.strokeStyle = color.toString() // 设置填充颜色
-  context.stroke()
-}
-
-function drawCircleSector(context: CanvasRenderingContext2D, startAngle: number, endAngle: number, color: Color) {
-  // 获取Canvas实际绘制尺寸
-  const width = context.width
-  const height = context.height
-  const centerX = width / 2
-  const centerY = height / 2
-  const radius = Math.min(width, height) / 2 // 取短边为最大半径
-  context.clearRect(0, 0, context.width, context.height)
-
-  if (startAngle == endAngle) {
-    return
-  } else {
-
-    // 扇形参数设置（示例绘制120度扇形）
-    const startRad = startAngle * Math.PI / 180 - Math.PI / 2
-    const endRad = endAngle * Math.PI / 180 - Math.PI / 2
-
-    // 绘制路径
-    context.beginPath()
-    context.moveTo(centerX, centerY)
-    context.arc(centerX, centerY, radius, startRad, endRad)
-    context.closePath()
-
-    // 填充样式设置
-    context.fillStyle = color.toString() // 设置填充颜色
-    context.fill()
-  }
-}
-
-
-@Entry
-@ComponentV2
-export default struct Index {
-  @Local settings: Setting = PersistenceV2.globalConnect({ type: Setting, defaultCreator: () => new Setting() })!
-
-  build() {
-    Column() {
-      Blank()
-      Pomodoro({
-        pomodoroCount: this.settings.pomodoro, pomodoroSeconds: 60, onRunning: (elapsed, total) => {
-        }
-      })
-        .width('90%')
-      Blank()
-    }
-    .alignItems(HorizontalAlign.Center)
-    .backgroundColor(Color.Pink)
-    .width('100%')
-    .height('100%')
   }
 }

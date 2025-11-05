@@ -1,4 +1,23 @@
 
 export class ThemeColors{
-  static Red = Color.Red
+  static Coral = "#FF5452"
+  static LightGreen = "#BAD8A2"
+  static Turquoise = "#7EBDC2"
+  static Lavender = "#7D8CC5"
+  static DarkPurple = "#4F3960"
+  static Mint = "#7DCD84"
+  static GrayBlue = "#8FA4A7"
+  static Sage = "#9EC4B5"
+  static SeaGreen = "#6DC2A3"
+  static NavyBlue = "#385C76"
+  static Teal = "#18BEBC"
+  static SageGreen = "#68A691"
+  static Salmon = "#F87666"
+  static OrangeRed = "#FF6F5A"
+  static Gold = "#D7A954"
+  static Crimson = "#F03A47"
+  static Brown = "#8D714C"
+  static LightBlue = "#9ED0D9"
+  static Charcoal = "#4A4B4F"
+  static Emerald = "#35CE8D"
 }
