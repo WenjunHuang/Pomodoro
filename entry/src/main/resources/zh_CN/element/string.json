@@ -2,87 +2,87 @@
   "string": [
     {
       "name": "module_desc",
-      "value": "module description"
+      "value": "模块描述"
     },
     {
       "name": "EntryAbility_desc",
-      "value": "description"
+      "value": "入口能力描述"
     },
     {
       "name": "EntryAbility_label",
-      "value": "label"
+      "value": "入口标签"
     },
     {
       "name": "setting_pomodoro",
-      "value": "POMODORO"
+      "value": "番茄钟"
     },
     {
       "name": "setting_durations",
-      "value": "DURATIONS"
+      "value": "时长设置"
     },
     {
       "name": "setting_break",
-      "value": "BREAK"
+      "value": "短休息"
     },
     {
       "name": "setting_long_break",
-      "value": "LONG BREAK"
+      "value": "长休息"
     },
     {
       "name": "setting_color_themes",
-      "value": "COLOR THEMES"
+      "value": "颜色主题"
     },
     {
       "name": "setting_sound_themes",
-      "value": "SOUND THEMES"
+      "value": "声音主题"
     },
     {
       "name": "setting_notification_sound",
-      "value": "NOTIFICATION SOUND"
+      "value": "通知提示音"
     },
     {
       "name": "setting_alarm_sound",
-      "value": "ALARM SOUND"
+      "value": "闹钟提示音"
     },
     {
       "name": "setting_other_preferences",
-      "value": "OTHER PREFERENCES"
+      "value": "其他偏好设置"
     },
     {
       "name": "setting_pomodoros_until_long_break",
-      "value": "POMODOROS UNTIL LONG BREAK"
+      "value": "长休息间隔（番茄钟数）"
     },
     {
       "name": "setting_daily_goal",
-      "value": "DAILY GOAL"
+      "value": "每日目标"
     },
     {
       "name": "setting_vibrate",
-      "value": "VIBRATE"
+      "value": "振动反馈"
     },
     {
       "name": "setting_autostart_breaks",
-      "value": "AUTOSTART BREAKS"
+      "value": "自动开始休息"
     },
     {
       "name": "setting_autostart_pomodoros",
-      "value": "AUTOSTART POMODOROS"
+      "value": "自动开始番茄钟"
     },
     {
       "name": "setting_show_notification",
-      "value": "SHOW NOTIFICATION"
+      "value": "显示通知"
     },
     {
       "name": "setting_keep_phone_awake",
-      "value": "KEEP PHONE AWAKE"
+      "value": "保持屏幕常亮"
     },
     {
       "name": "setting_howto",
-      "value": "HOW TO USE?"
+      "value": "使用帮助"
     },
     {
       "name": "setting_rate_us",
-      "value": "RATE US"
+      "value": "给我们评分"
     }
   ]
 }
