@@ -35,18 +35,17 @@ class CircleBorderBouncingModifier implements AttributeModifier<CommonAttribute>
   }
 
   applyNormalAttribute(instance: CommonAttribute): void {
-    // if (this.isBouncing) {
+    if (this.isBouncing) {
       instance.transition(TransitionEffect.asymmetric(TransitionEffect.scale({ x: 1.05, y: 1.05 })
         .animation({ curve: curves.springMotion(0.6, 1.2), delay: 100 }), TransitionEffect.IDENTITY))
-    // } else {
-    //   instance.transition(TransitionEffect.IDENTITY)
-    // }
+    } else {
+    }
   }
 }
 
 @ComponentV2
 struct Pomodoro {
-  @Local bouncing: CircleBorderBouncingModifier = new CircleBorderBouncingModifier()
+  @Local isCircleBouncing: boolean = false
   @Local state: PomodoroState = { type: 'stopped' }
   @Local settings: Setting = PersistenceV2.globalConnect({ type: Setting, defaultCreator: () => new Setting() })!
   private pomodoroContext: CanvasRenderingContext2D = new CanvasRenderingContext2D(new RenderingContextSettings(true))
@@ -122,9 +121,9 @@ struct Pomodoro {
 
     this.clearTimer()
     if (before.type === 'transition' && (after.type === 'running' || after.type === 'stopped')) {
-      this.bouncing.isBouncing = true
+      this.isCircleBouncing = true
     } else {
-      this.bouncing.isBouncing = false
+      this.isCircleBouncing = false
     }
 
     if (after.type === 'running') {
@@ -185,14 +184,18 @@ struct Pomodoro {
           .transition(TransitionEffect.OPACITY.animation({ curve: curves.springMotion() }))
       }
 
-      this.buildBorder()
+      if (this.isCircleBouncing) {
+        this.buildCycleBorder(true)
+      } else {
+        this.buildCycleBorder(false)
+      }
     }
     .width('60%')
     .aspectRatio(1) // 强制宽高比1:1
   }
 
   @Builder
-  buildBorder() {
+  buildCycleBorder(bouncing: boolean) {
     Stack() {
       Canvas(this.tickContext)
         .width('100%')
@@ -203,8 +206,6 @@ struct Pomodoro {
 
       Column() {
         Column()
-          .id(this.state.type)
-          .attributeModifier(this.bouncing)
           .width('100%')
           .height('100%')
           .borderColor(Color.White)
@@ -227,6 +228,9 @@ struct Pomodoro {
           }
         })
     )
+    .transition(bouncing ? TransitionEffect.asymmetric(TransitionEffect.scale({ x: 1.05, y: 1.05 })
+      .animation({ curve: curves.springMotion(0.6, 1.2), delay: 100 }), TransitionEffect.IDENTITY) :
+      TransitionEffect.IDENTITY)
     .gesture(TapGesture()
       .onAction((event) => {
         if (this.state.type === 'stopped') {
