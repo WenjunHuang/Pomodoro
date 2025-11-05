@@ -5,34 +5,26 @@ import { PomodoroTimer } from '../components/PomodoroTimer';
 @Entry
 @ComponentV2
 export default struct Index {
-  @Local settings: Setting = PersistenceV2.globalConnect({ type: Setting, defaultCreator: () => new Setting() })!
   @Provider('pageInfos')
   pageInfos: NavPathStack = new NavPathStack()
+  @Local
+  settings: Setting = PersistenceV2.globalConnect({ type: Setting, defaultCreator: () => new Setting() })!
 
-  build() {
-    Navigation(this.pageInfos) {
-      Column() {
-        Row() {
-          Blank()
-          Image($r("app.media.list"))
-            .width(24)
-            .height(24)
-            .fillColor(Color.White)
-            .margin({ right: 16 })
-        }
-        .width('100%')
-        .margin({ top: 16, bottom: 24 })
+  private firstPage:string = "PomodoroClock"
 
-        Blank()
-        PomodoroTimer({
-          pomodoroCount: this.settings.pomodoro, pomodoroSeconds: 60, onRunning: (elapsed, total) => {
-          }
-        }).width('90%')
-        Blank()
-      }
+  aboutToAppear(): void {
+    if (this.settings.firstStartApp){
+      this.firstPage = "HowTo"
+      this.settings.firstStartApp = false
+      PersistenceV2.save(Setting)
+    } else {
+      this.firstPage = "PomodoroClock"
     }
-    .width('100%')
-    .height('100%')
-    .backgroundColor(this.settings.colorTheme)
+  }
+  build() {
+    Navigation(this.pageInfos, { name: this.firstPage})
+      .titleMode(NavigationTitleMode.Free)
+      .width('100%')
+      .height('100%')
   }
 }
