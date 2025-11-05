@@ -26,9 +26,27 @@ interface Transition {
 
 type PomodoroState = Running | Paused | Stopped | Transition
 
+@ObservedV2
+class CircleBorderBouncingModifier implements AttributeModifier<CommonAttribute> {
+  @Trace isBouncing: boolean = false
+
+  constructor(isBouncing?: boolean) {
+    this.isBouncing = isBouncing ?? false
+  }
+
+  applyNormalAttribute(instance: CommonAttribute): void {
+    // if (this.isBouncing) {
+      instance.transition(TransitionEffect.asymmetric(TransitionEffect.scale({ x: 1.05, y: 1.05 })
+        .animation({ curve: curves.springMotion(0.6, 1.2), delay: 100 }), TransitionEffect.IDENTITY))
+    // } else {
+    //   instance.transition(TransitionEffect.IDENTITY)
+    // }
+  }
+}
+
 @ComponentV2
 struct Pomodoro {
-  @Local isShowScaleBorder: boolean = false
+  @Local bouncing: CircleBorderBouncingModifier = new CircleBorderBouncingModifier()
   @Local state: PomodoroState = { type: 'stopped' }
   @Local settings: Setting = PersistenceV2.globalConnect({ type: Setting, defaultCreator: () => new Setting() })!
   private pomodoroContext: CanvasRenderingContext2D = new CanvasRenderingContext2D(new RenderingContextSettings(true))
@@ -50,7 +68,7 @@ struct Pomodoro {
 
   private drawProgress(elapsed: number, total: number) {
     let remaining = total - elapsed
-    drawCircle(this.pomodoroContext, 0, (remaining / total) * 360, Color.White)
+    drawCircleSector(this.pomodoroContext, 0, (remaining / total) * 360, Color.White)
   }
 
   private startTicking() {
@@ -104,9 +122,9 @@ struct Pomodoro {
 
     this.clearTimer()
     if (before.type === 'transition' && (after.type === 'running' || after.type === 'stopped')) {
-      this.isShowScaleBorder = true
+      this.bouncing.isBouncing = true
     } else {
-      this.isShowScaleBorder = false
+      this.bouncing.isBouncing = false
     }
 
     if (after.type === 'running') {
@@ -167,80 +185,99 @@ struct Pomodoro {
           .transition(TransitionEffect.OPACITY.animation({ curve: curves.springMotion() }))
       }
 
-      Stack() {
-        Shape() {
-          ForEach(Array.from({ length: this.settings.pomodoro }, (_: number, i) => i), (index: number) => {
-            const angle = index * (360 / this.scaleCount)
-            const radian = angle * Math.PI / 180
-            Path()
-              .commands(`M${this.calcInnerPoint(radian)} L${this.calcOuterPoint(radian)}`)
-              .strokeWidth(2)
-              .stroke(Color.Black)
-          })
-        }
-        .fill(Color.Transparent)
-        .stroke(8)
-        .strokeDashArray([8])
-        .width('100%')
-        .height('100%')
-
-        Column() {
-          Column()
-            .width('100%')
-            .height('100%')
-            .borderColor(Color.White)
-            .borderWidth(8)
-            .borderRadius('50%')
-        }
-        .padding(8)
-        .width('100%')
-        .height('100%')
-      }
-      .width('100%')
-      .height('100%')
-      .transition(this.isShowScaleBorder ? TransitionEffect.asymmetric(TransitionEffect.scale({ x: 1.05, y: 1.05 })
-        .animation({ curve: curves.springMotion() }), TransitionEffect.IDENTITY) : TransitionEffect.IDENTITY)
-      .gesture(
-        LongPressGesture()
-          .onAction((event) => {
-            if (this.state.type !== 'transition') {
-              if (this.state.type === 'running' || this.state.type === 'paused') {
-                this.state = { type: 'transition', from: this.state, to: { type: 'stopped' } }
-              }
-            }
-          })
-      )
-      .gesture(TapGesture()
-        .onAction((event) => {
-          if (this.state.type === 'stopped') {
-            this.state = {
-              type: 'transition',
-              from: this.state,
-              to: {
-                type: 'running',
-                elapsedTime: 0, totalTime: this.settings.pomodoro * Pomodoro.DURATION_MS
-              }
-            }
-          } else if (this.state.type === 'running') {
-            this.state = { type: 'paused', elapsedTime: this.state.elapsedTime, totalTime: this.state.totalTime }
-          } else if (this.state.type === 'paused') {
-            this.state = { type: 'running', elapsedTime: this.state.elapsedTime, totalTime: this.state.totalTime }
-          }
-        })
-      )
+      this.buildBorder()
     }
     .width('60%')
     .aspectRatio(1) // 强制宽高比1:1
   }
+
+  @Builder
+  buildBorder() {
+    Stack() {
+      Canvas(this.tickContext)
+        .width('100%')
+        .height('100%')
+        .onReady(() => {
+          drawTicks(this.tickContext, this.settings.pomodoro, 8, Color.White);
+        });
+
+      Column() {
+        Column()
+          .id(this.state.type)
+          .attributeModifier(this.bouncing)
+          .width('100%')
+          .height('100%')
+          .borderColor(Color.White)
+          .borderWidth(8)
+          .borderRadius('50%');
+      }
+      .padding(12)
+      .width('100%')
+      .height('100%');
+    }
+    .width('100%')
+    .height('100%')
+    .gesture(
+      LongPressGesture()
+        .onAction((event) => {
+          if (this.state.type !== 'transition') {
+            if (this.state.type === 'running' || this.state.type === 'paused') {
+              this.state = { type: 'transition', from: this.state, to: { type: 'stopped' } };
+            }
+          }
+        })
+    )
+    .gesture(TapGesture()
+      .onAction((event) => {
+        if (this.state.type === 'stopped') {
+          this.state = {
+            type: 'transition',
+            from: this.state,
+            to: {
+              type: 'running',
+              elapsedTime: 0, totalTime: this.settings.pomodoro * Pomodoro.DURATION_MS
+            }
+          };
+        } else if (this.state.type === 'running') {
+          this.state = { type: 'paused', elapsedTime: this.state.elapsedTime, totalTime: this.state.totalTime };
+        } else if (this.state.type === 'paused') {
+          this.state = { type: 'running', elapsedTime: this.state.elapsedTime, totalTime: this.state.totalTime };
+        }
+      })
+    )
+  }
 }
 
-// 极坐标转笛卡尔坐标
-function calcPoint(angle: number, r: number, centerX: number, centerY: number): Array<number> {
-  const radian = angle * Math.PI / 180
-  return [centerX + r * Math.sin(radian), centerY - r * Math.cos(radian)]
+function drawTicks(context: CanvasRenderingContext2D, ticksCount: number, tickLength: number, color: Color) {
+  // 获取Canvas实际绘制尺寸
+  const width = context.width
+  const height = context.height
+  const centerX = width / 2
+  const centerY = height / 2
+  const radius = Math.min(width, height) / 2 // 取短边为最大半径
+  if (ticksCount <= 0) {
+    return
+  }
+
+  context.beginPath()
+  for (let index = 0; index < ticksCount; index++) {
+    const theta = index * (2 * Math.PI / ticksCount)
+    const fromX = centerX - (radius - tickLength) * Math.sin(theta)
+    const fromY = centerY - (radius - tickLength) * Math.cos(theta)
+    const toX = centerX - radius * Math.sin(theta)
+    const toY = centerY - radius * Math.cos(theta)
+    context.moveTo(fromX, fromY)
+    context.lineTo(toX, toY)
+  }
+  context.closePath()
+
+  // 填充样式设置
+  context.lineWidth = 2
+  context.strokeStyle = color.toString() // 设置填充颜色
+  context.stroke()
 }
 
-function drawCircle(context: CanvasRenderingContext2D, startAngle: number, endAngle: number, color: Color) {
+function drawCircleSector(context: CanvasRenderingContext2D, startAngle: number, endAngle: number, color: Color) {
   // 获取Canvas实际绘制尺寸
   const width = context.width
   const height = context.height
@@ -275,7 +312,9 @@ function drawCircle(context: CanvasRenderingContext2D, startAngle: number, endAn
 export default struct Index {
   build() {
     Column() {
+      Blank()
       Pomodoro()
+      Blank()
     }
     .alignItems(HorizontalAlign.Center)
     .backgroundColor(Color.Pink)

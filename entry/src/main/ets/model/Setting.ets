@@ -8,7 +8,7 @@ export enum SoundTheme {
 
 @ObservedV2
 export class Setting {
-  @Trace pomodoro: number = 1
+  @Trace pomodoro: number = 8
   @Trace break: number = 1
   @Trace longBreak: number = 1
   @Trace colorTheme: Color = ThemeColors.Red
