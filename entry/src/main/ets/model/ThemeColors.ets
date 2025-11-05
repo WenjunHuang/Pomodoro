@@ -1,5 +1,6 @@
+import { adjustHexColor } from "../utils/ColorUtils"
 
-export class ThemeColors{
+export class ThemeColors {
   static Coral = "#FF5452"
   static LightGreen = "#BAD8A2"
   static Turquoise = "#7EBDC2"
@@ -20,4 +21,8 @@ export class ThemeColors{
   static LightBlue = "#9ED0D9"
   static Charcoal = "#4A4B4F"
   static Emerald = "#35CE8D"
+}
+
+export function themeColor(color: string): string {
+  return adjustHexColor(color, 1.0032)
 }
