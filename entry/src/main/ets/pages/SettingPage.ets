@@ -67,42 +67,30 @@ export struct SettingPage {
               duration: `${this.settings.pomodoro}`,
               label: $r("app.string.setting_pomodoro"),
               onClick: async () => {
-                await PromptActionClass.openDialog(this.getUIContext(),
-                  new ComponentContent(this.getUIContext(), wrapBuilder(numberSetting),
-                    new NumberSettingParam(this.settings.pomodoro, $r("app.string.setting_pomodoro"))),
-                  (result) => {
-                    if (result) {
-                      this.settings.pomodoro = result as number
-                    }
-                  }
+                await this.showNumberDialog(
+                  this.settings.pomodoro,
+                  $r("app.string.setting_pomodoro"),
+                  (v: number) => (this.settings.pomodoro = v)
                 )
               }
             })
             Blank(8)
             this.numberCard({
               duration: `${this.settings.break}`, label: $r("app.string.setting_break"), onClick: async () => {
-                await PromptActionClass.openDialog(this.getUIContext(),
-                  new ComponentContent(this.getUIContext(), wrapBuilder(numberSetting),
-                    new NumberSettingParam(this.settings.break, $r("app.string.setting_break"))),
-                  (result) => {
-                    if (result) {
-                      this.settings.break = result as number
-                    }
-                  }
+                await this.showNumberDialog(
+                  this.settings.break,
+                  $r("app.string.setting_break"),
+                  (v: number) => (this.settings.break = v)
                 )
               }
             })
             Blank(8)
             this.numberCard({
               duration: `${this.settings.longBreak}`, label: $r("app.string.setting_long_break"), onClick: async () => {
-                await PromptActionClass.openDialog(this.getUIContext(),
-                  new ComponentContent(this.getUIContext(), wrapBuilder(numberSetting),
-                    new NumberSettingParam(this.settings.longBreak, $r("app.string.setting_long_break"))),
-                  (result) => {
-                    if (result) {
-                      this.settings.longBreak = result as number
-                    }
-                  }
+                await this.showNumberDialog(
+                  this.settings.longBreak,
+                  $r("app.string.setting_long_break"),
+                  (v: number) => (this.settings.longBreak = v)
                 )
               }
             })
@@ -133,29 +121,20 @@ export struct SettingPage {
               duration: `${this.settings.pomodorosUntilLongBreak}`,
               label: $r("app.string.setting_pomodoros_until_long_break"),
               onClick: async () => {
-                await PromptActionClass.openDialog(this.getUIContext(),
-                  new ComponentContent(this.getUIContext(), wrapBuilder(numberSetting),
-                    new NumberSettingParam(this.settings.pomodorosUntilLongBreak,
-                      $r("app.string.setting_pomodoros_until_long_break"))),
-                  (result) => {
-                    if (result) {
-                      this.settings.pomodorosUntilLongBreak = result as number
-                    }
-                  }
+                await this.showNumberDialog(
+                  this.settings.pomodorosUntilLongBreak,
+                  $r("app.string.setting_pomodoros_until_long_break"),
+                  (v: number) => (this.settings.pomodorosUntilLongBreak = v)
                 )
               }
             })
             Blank(8)
             this.numberCard({
               duration: `${this.settings.dailyGoal}`, label: $r("app.string.setting_daily_goal"), onClick: async () => {
-                await PromptActionClass.openDialog(this.getUIContext(),
-                  new ComponentContent(this.getUIContext(), wrapBuilder(numberSetting),
-                    new NumberSettingParam(this.settings.dailyGoal, $r("app.string.setting_daily_goal"))),
-                  (result) => {
-                    if (result) {
-                      this.settings.dailyGoal = result as number
-                    }
-                  }
+                await this.showNumberDialog(
+                  this.settings.dailyGoal,
+                  $r("app.string.setting_daily_goal"),
+                  (v: number) => (this.settings.dailyGoal = v)
                 )
               }
             })
@@ -331,6 +310,18 @@ export struct SettingPage {
 
   private labelBackground(): ResourceColor {
     return adjustHexColor(this.settings.colorTheme, 1.2)
+  }
+
+  private async showNumberDialog(initial: number, label: ResourceStr, onChange: (value: number) => void) {
+    await PromptActionClass.openDialog(
+      this.getUIContext(),
+      new ComponentContent(this.getUIContext(), wrapBuilder(numberSetting), new NumberSettingParam(initial, label)),
+      (result) => {
+        if (result) {
+          onChange(result as number)
+        }
+      }
+    )
   }
 }
 
