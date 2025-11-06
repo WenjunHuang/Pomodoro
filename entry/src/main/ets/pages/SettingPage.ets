@@ -68,8 +68,8 @@ export struct SettingPage {
               label: $r("app.string.setting_pomodoro"),
               onClick: async () => {
                 await PromptActionClass.openDialog(this.getUIContext(),
-                  new ComponentContent(this.getUIContext(), wrapBuilder(pomodoroCountSetting),
-                    this.settings.pomodoro),
+                  new ComponentContent(this.getUIContext(), wrapBuilder(numberSetting),
+                    new NumberSettingParam(this.settings.pomodoro, $r("app.string.setting_pomodoro"))),
                   (result) => {
                     if (result) {
                       this.settings.pomodoro = result as number
@@ -79,9 +79,33 @@ export struct SettingPage {
               }
             })
             Blank(8)
-            this.numberCard({ duration: "1", label: $r("app.string.setting_break") })
+            this.numberCard({
+              duration: `${this.settings.break}`, label: $r("app.string.setting_break"), onClick: async () => {
+                await PromptActionClass.openDialog(this.getUIContext(),
+                  new ComponentContent(this.getUIContext(), wrapBuilder(numberSetting),
+                    new NumberSettingParam(this.settings.break, $r("app.string.setting_break"))),
+                  (result) => {
+                    if (result) {
+                      this.settings.break = result as number
+                    }
+                  }
+                )
+              }
+            })
             Blank(8)
-            this.numberCard({ duration: "1", label: $r("app.string.setting_long_break") })
+            this.numberCard({
+              duration: `${this.settings.longBreak}`, label: $r("app.string.setting_long_break"), onClick: async () => {
+                await PromptActionClass.openDialog(this.getUIContext(),
+                  new ComponentContent(this.getUIContext(), wrapBuilder(numberSetting),
+                    new NumberSettingParam(this.settings.longBreak, $r("app.string.setting_long_break"))),
+                  (result) => {
+                    if (result) {
+                      this.settings.longBreak = result as number
+                    }
+                  }
+                )
+              }
+            })
           }
           .width('100%')
 
@@ -105,9 +129,36 @@ export struct SettingPage {
             .labelTextStyle()
             .margin({ bottom: 24, top: 24 })
           Row() {
-            this.numberCard({ duration: "4", label: $r("app.string.setting_pomodoros_until_long_break") })
+            this.numberCard({
+              duration: `${this.settings.pomodorosUntilLongBreak}`,
+              label: $r("app.string.setting_pomodoros_until_long_break"),
+              onClick: async () => {
+                await PromptActionClass.openDialog(this.getUIContext(),
+                  new ComponentContent(this.getUIContext(), wrapBuilder(numberSetting),
+                    new NumberSettingParam(this.settings.pomodorosUntilLongBreak,
+                      $r("app.string.setting_pomodoros_until_long_break"))),
+                  (result) => {
+                    if (result) {
+                      this.settings.pomodorosUntilLongBreak = result as number
+                    }
+                  }
+                )
+              }
+            })
             Blank(8)
-            this.numberCard({ duration: "6", label: $r("app.string.setting_daily_goal") })
+            this.numberCard({
+              duration: `${this.settings.dailyGoal}`, label: $r("app.string.setting_daily_goal"), onClick: async () => {
+                await PromptActionClass.openDialog(this.getUIContext(),
+                  new ComponentContent(this.getUIContext(), wrapBuilder(numberSetting),
+                    new NumberSettingParam(this.settings.dailyGoal, $r("app.string.setting_daily_goal"))),
+                  (result) => {
+                    if (result) {
+                      this.settings.dailyGoal = result as number
+                    }
+                  }
+                )
+              }
+            })
           }.width("100%")
 
           Blank(12)
@@ -283,10 +334,24 @@ export struct SettingPage {
   }
 }
 
+class NumberSettingParam {
+  count: number
+  label: ResourceStr
+
+  constructor(count: number, label: ResourceStr) {
+    this.count = count
+    this.label = label
+  }
+
+  setCount(count: number): NumberSettingParam {
+    return new NumberSettingParam(count, this.label)
+  }
+}
+
 @Builder
-function pomodoroCountSetting(count: number) {
+function numberSetting(param: NumberSettingParam) {
   Column() {
-    Text($r("app.string.setting_pomodoro"))
+    Text(param.label)
       .labelTextStyle()
       .margin({ bottom: 24 })
     Row() {
@@ -296,11 +361,11 @@ function pomodoroCountSetting(count: number) {
         .height(48)
         .margin({ right: 24 })
         .onClick((e) => {
-          if (count > 1) {
-            PromptActionClass.updateDialog(count - 1)
+          if (param.count > 1) {
+            PromptActionClass.updateDialog(param.setCount(param.count - 1))
           }
         })
-      Text(`${count}`)
+      Text(`${param.count}`)
         .fontColor(Color.White)
         .fontSize(64)
         .fontWeight(FontWeight.Bold)
@@ -310,27 +375,19 @@ function pomodoroCountSetting(count: number) {
         .height(48)
         .margin({ left: 24 })
         .onClick((e) => {
-          PromptActionClass.updateDialog(count + 1)
+          PromptActionClass.updateDialog(param.setCount(param.count + 1))
         })
-    }.justifyContent(FlexAlign.Center)
-    .margin({ bottom: 24 })
+    }
+    .justifyContent(FlexAlign.Center)
 
     Image($r("app.media.check"))
       .fillColor(Color.White)
       .width(48)
       .height(48)
       .onClick((e) => {
-        PromptActionClass.closeDialog(count)
+        PromptActionClass.closeDialog(param.count)
       })
   }.justifyContent(FlexAlign.Center)
-}
-
-class PromptActionParam<T> {
-  value: T
-
-  constructor(value: T) {
-    this.value = value
-  }
 }
 
 class PromptActionClass {
