@@ -1,16 +1,9 @@
-import { PersistenceV2 } from '@kit.ArkUI'
-import { Setting, SoundTheme } from '../model/Setting'
-import { ThemeColors } from '../model/ThemeColors'
-import { adjustHexColor, getDisabledColor } from '../utils/ColorUtils'
-import { media } from '@kit.MediaKit';
-import { audio, audioHaptic } from '@kit.AudioKit';
-import { notificationManager } from '@kit.NotificationKit';
-import { ringtone } from '@kit.RingtoneKit';
-import resourceManager from '@ohos.resourceManager';
-import { vibrator, Vibrator, VibrateOptions } from '@kit.SensorServiceKit';
-import hilog from '@ohos.hilog';
+import { PersistenceV2 } from '@kit.ArkUI';
+import { Setting } from '../model/Setting';
+import { ThemeColors } from '../model/ThemeColors';
+import { adjustHexColor, getDisabledColor } from '../utils/ColorUtils';
+import { vibrator } from '@kit.SensorServiceKit';
 
-// import { systemSoundManager } from '@kit.AudioKit';
 @Builder
 export function SettingPageBuilder() {
   SettingPage()
@@ -39,6 +32,12 @@ class SwitchCardParam {
   onSwitchOff?: () => void
 }
 
+class NumCardParam {
+  duration: string = ""
+  label: ResourceStr = ""
+  onClick?: () => void
+}
+
 @ComponentV2
 export struct SettingPage {
   @Local settings: Setting = PersistenceV2.globalConnect({ type: Setting, defaultCreator: () => new Setting() })!
@@ -64,11 +63,17 @@ export struct SettingPage {
             .labelTextStyle()
             .margin({ bottom: 24, top: 24 })
           Row() {
-            this.numberCard("14", $r("app.string.setting_pomodoro"))
+            this.numberCard({
+              duration: `${this.settings.pomodoro}`,
+              label: $r("app.string.setting_pomodoro"),
+              onClick: () => {
+                this.pageInfos.pushDestination({})
+              }
+            })
             Blank(8)
-            this.numberCard("1", $r("app.string.setting_break"))
+            this.numberCard({ duration: "1", label: $r("app.string.setting_break") })
             Blank(8)
-            this.numberCard("1", $r("app.string.setting_long_break"))
+            this.numberCard({ duration: "1", label: $r("app.string.setting_long_break") })
           }
           .width('100%')
 
@@ -92,9 +97,9 @@ export struct SettingPage {
             .labelTextStyle()
             .margin({ bottom: 24, top: 24 })
           Row() {
-            this.numberCard("4", $r("app.string.setting_pomodoros_until_long_break"))
+            this.numberCard({ duration: "4", label: $r("app.string.setting_pomodoros_until_long_break") })
             Blank(8)
-            this.numberCard("6", $r("app.string.setting_daily_goal"))
+            this.numberCard({ duration: "6", label: $r("app.string.setting_daily_goal") })
           }.width("100%")
 
           Blank(12)
@@ -217,12 +222,12 @@ export struct SettingPage {
   }
 
   @Builder
-  private numberCard(duration: string, label: Resource) {
+  private numberCard(param: NumCardParam) {
     Column() {
-      Text(duration)
+      Text(param.duration)
         .durationTextStyle()
         .margin({ bottom: 16 })
-      Text(label)
+      Text(param.label)
         .labelTextStyle()
     }
     .padding({ top: 16, bottom: 16 })
@@ -230,6 +235,9 @@ export struct SettingPage {
     .backgroundColor(this.labelBackground())
     .animation({ duration: 200, curve: Curve.Ease })
     .layoutWeight(1)
+    .onClick((event) => {
+      param.onClick && param.onClick()
+    })
   }
 
   @Builder
@@ -264,5 +272,19 @@ export struct SettingPage {
 
   private labelBackground(): ResourceColor {
     return adjustHexColor(this.settings.colorTheme, 1.2)
+  }
+}
+
+export function SettingPomodoroSettingBuilder() {
+
+}
+
+@ComponentV2
+export struct SettingPomodoroSetting {
+  @Consumer("")
+  build() {
+    NavDestination()
+      .mode(NavDestinationMode.DIALOG)
+
   }
 }
