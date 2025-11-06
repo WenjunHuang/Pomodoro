@@ -1,9 +1,16 @@
 import { PersistenceV2 } from '@kit.ArkUI'
-import { Setting } from '../model/Setting'
-import { themeColor, ThemeColors } from '../model/ThemeColors'
-import { LabelTextStyle } from '../styles/SettingStyles'
-import { adjustHexColor } from '../utils/ColorUtils'
+import { Setting, SoundTheme } from '../model/Setting'
+import { ThemeColors } from '../model/ThemeColors'
+import { adjustHexColor, getDisabledColor } from '../utils/ColorUtils'
+import { media } from '@kit.MediaKit';
+import { audio, audioHaptic } from '@kit.AudioKit';
+import { notificationManager } from '@kit.NotificationKit';
+import { ringtone } from '@kit.RingtoneKit';
+import resourceManager from '@ohos.resourceManager';
+import { vibrator, Vibrator, VibrateOptions } from '@kit.SensorServiceKit';
+import hilog from '@ohos.hilog';
 
+// import { systemSoundManager } from '@kit.AudioKit';
 @Builder
 export function SettingPageBuilder() {
   SettingPage()
@@ -24,9 +31,12 @@ function durationTextStyle() {
   .textAlign(TextAlign.Center)
 }
 
-@AnimatableExtend(NavDestination)
-function animatableBackgroundColor(color: ResourceColor) {
-  .backgroundColor(color) // 调用系统属性接口，逐帧回调函数每帧修改可动画属性的值，实现逐帧布局的效果。
+class SwitchCardParam {
+  label: ResourceStr = ""
+  isSwitchOnSelected: boolean = true
+  isSwitchOffSelected: boolean = true
+  onSwitchOn?: () => void
+  onSwitchOff?: () => void
 }
 
 @ComponentV2
@@ -54,11 +64,11 @@ export struct SettingPage {
             .labelTextStyle()
             .margin({ bottom: 24, top: 24 })
           Row() {
-            this.durationCard("14", $r("app.string.setting_pomodoro"))
+            this.numberCard("14", $r("app.string.setting_pomodoro"))
             Blank(8)
-            this.durationCard("1", $r("app.string.setting_break"))
+            this.numberCard("1", $r("app.string.setting_break"))
             Blank(8)
-            this.durationCard("1", $r("app.string.setting_long_break"))
+            this.numberCard("1", $r("app.string.setting_long_break"))
           }
           .width('100%')
 
@@ -78,9 +88,81 @@ export struct SettingPage {
           .animation({ duration: 200, curve: Curve.Ease })
           .background(this.labelBackground())
 
-          Text($r("app.string.setting_sound_themes"))
+          Text($r("app.string.setting_other_preferences"))
             .labelTextStyle()
             .margin({ bottom: 24, top: 24 })
+          Row() {
+            this.numberCard("4", $r("app.string.setting_pomodoros_until_long_break"))
+            Blank(8)
+            this.numberCard("6", $r("app.string.setting_daily_goal"))
+          }.width("100%")
+
+          Blank(12)
+          this.switchCard({
+            label: $r("app.string.setting_vibrate"),
+            isSwitchOnSelected: this.settings.vibrate,
+            isSwitchOffSelected: !this.settings.vibrate,
+            onSwitchOn: async () => {
+              this.settings.vibrate = true
+              try {
+                await vibrator.startVibration({ type: "time", duration: 2000 }, { usage: "notification" })
+              } catch (e) {
+                console.error(JSON.stringify(e))
+              }
+            },
+            onSwitchOff: () => {
+              this.settings.vibrate = false
+            }
+          })
+          Blank(12)
+          this.switchCard({
+            label: $r("app.string.setting_autostart_breaks"),
+            isSwitchOnSelected: this.settings.autostartBreaks,
+            isSwitchOffSelected: !this.settings.autostartBreaks,
+            onSwitchOn: () => {
+              this.settings.autostartBreaks = true
+            },
+            onSwitchOff: () => {
+              this.settings.autostartBreaks = false
+            }
+          })
+          Blank(12)
+          this.switchCard({
+            label: $r("app.string.setting_autostart_pomodoros"),
+            isSwitchOnSelected: this.settings.autostartPomodoros,
+            isSwitchOffSelected: !this.settings.autostartPomodoros,
+            onSwitchOn: () => {
+              this.settings.autostartPomodoros = true
+            },
+            onSwitchOff: () => {
+              this.settings.autostartPomodoros = false
+            }
+          })
+          Blank(12)
+          this.switchCard({
+            label: $r("app.string.setting_show_notification"),
+            isSwitchOnSelected: this.settings.showNotification,
+            isSwitchOffSelected: !this.settings.showNotification,
+            onSwitchOn: () => {
+              this.settings.showNotification = true
+            },
+            onSwitchOff: () => {
+              this.settings.showNotification = false
+            }
+          })
+          Blank(12)
+          this.switchCard({
+            label: $r("app.string.setting_keep_phone_awake"),
+            isSwitchOnSelected: this.settings.keepPhoneAwake,
+            isSwitchOffSelected: !this.settings.keepPhoneAwake,
+            onSwitchOn: () => {
+              this.settings.keepPhoneAwake = true
+            },
+            onSwitchOff: () => {
+              this.settings.keepPhoneAwake = false
+            }
+          })
+
         }.width('100%')
         .padding(16)
       }
@@ -97,7 +179,45 @@ export struct SettingPage {
   }
 
   @Builder
-  private durationCard(duration: string, label: Resource) {
+  private switchCard(param: SwitchCardParam) {
+    Column() {
+      Row() {
+        Image($r("app.media.check"))
+          .width(48)
+          .height(48)
+          .aspectRatio(1)
+          .fillColor(param.isSwitchOnSelected ? Color.White : getDisabledColor("#FFFFFF"))
+          .enabled(!param.isSwitchOnSelected)
+          .onClick(async (event) => {
+            param.onSwitchOn && param.onSwitchOn()
+          })
+          .animation({ duration: 100, curve: Curve.Ease })
+          .margin({ right: 16 })
+        Image($r("app.media.cross"))
+          .width(48)
+          .height(48)
+          .aspectRatio(1)
+          .fillColor(param.isSwitchOffSelected ? Color.White : getDisabledColor("#FFFFFF"))
+          .enabled(!param.isSwitchOffSelected)
+          .onClick((event) => {
+            param.onSwitchOff && param.onSwitchOff()
+          })
+          .animation({ duration: 100, curve: Curve.Ease })
+      }
+      .justifyContent(FlexAlign.Center)
+      .margin({ bottom: 8 })
+
+      Text(param.label)
+        .labelTextStyle()
+    }
+    .padding({ top: 16, bottom: 16 })
+    .backgroundColor(this.labelBackground())
+    .animation({ duration: 200, curve: Curve.Ease })
+    .width("100%")
+  }
+
+  @Builder
+  private numberCard(duration: string, label: Resource) {
     Column() {
       Text(duration)
         .durationTextStyle()
@@ -105,7 +225,7 @@ export struct SettingPage {
       Text(label)
         .labelTextStyle()
     }
-    .padding({ top: 24, bottom: 24 })
+    .padding({ top: 16, bottom: 16 })
     .alignItems(HorizontalAlign.Center)
     .backgroundColor(this.labelBackground())
     .animation({ duration: 200, curve: Curve.Ease })
@@ -127,8 +247,8 @@ export struct SettingPage {
               .fill(color)
             if (this.settings.colorTheme === color) {
               Image($r('app.media.check')).fillColor(Color.White)
-                .width("80%")
-                .height("80%")
+                .width(48)
+                .height(48)
                 .transition(TransitionEffect.OPACITY.animation({ duration: 200, curve: Curve.Ease }))
             }
           }

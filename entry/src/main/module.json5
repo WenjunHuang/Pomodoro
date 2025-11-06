@@ -33,7 +33,12 @@
       }
     ],
     "extensionAbilities": [],
-    "routerMap": "$profile:router_map"
+    "routerMap": "$profile:router_map",
+    "requestPermissions": [
+      {
+        "name": "ohos.permission.VIBRATE"
+      }
+    ],
 
  },
 }
