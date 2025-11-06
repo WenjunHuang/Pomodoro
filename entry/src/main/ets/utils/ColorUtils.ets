@@ -86,3 +86,9 @@ export function getDisabledColor(hex: string, alpha: number = 0x66): string {
   // 组合 alpha 和 RGB 值，返回 8 位格式 #AARRGGBB
   return `#${alphaHex}${red}${green}${blue}`
 }
+
+// 获取遮罩颜色（基于黑色，返回 #AARRGGBB）
+// 默认 alpha 为 0x66（约 40% 不透明）
+export function getMaskColor(alpha: number = 0x66): string {
+  return getDisabledColor('#000000', alpha)
+}

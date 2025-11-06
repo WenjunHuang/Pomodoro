@@ -1,7 +1,7 @@
-import { PersistenceV2 } from '@kit.ArkUI';
+import { ComponentContent, PersistenceV2, promptAction } from '@kit.ArkUI';
 import { Setting } from '../model/Setting';
 import { ThemeColors } from '../model/ThemeColors';
-import { adjustHexColor, getDisabledColor } from '../utils/ColorUtils';
+import { adjustHexColor, getDisabledColor, getMaskColor } from '../utils/ColorUtils';
 import { vibrator } from '@kit.SensorServiceKit';
 
 @Builder
@@ -66,8 +66,16 @@ export struct SettingPage {
             this.numberCard({
               duration: `${this.settings.pomodoro}`,
               label: $r("app.string.setting_pomodoro"),
-              onClick: () => {
-                this.pageInfos.pushDestination({})
+              onClick: async () => {
+                await PromptActionClass.openDialog(this.getUIContext(),
+                  new ComponentContent(this.getUIContext(), wrapBuilder(pomodoroCountSetting),
+                    this.settings.pomodoro),
+                  (result) => {
+                    if (result) {
+                      this.settings.pomodoro = result as number
+                    }
+                  }
+                )
               }
             })
             Blank(8)
@@ -275,16 +283,81 @@ export struct SettingPage {
   }
 }
 
-export function SettingPomodoroSettingBuilder() {
+@Builder
+function pomodoroCountSetting(count: number) {
+  Column() {
+    Text($r("app.string.setting_pomodoro"))
+      .labelTextStyle()
+      .margin({ bottom: 24 })
+    Row() {
+      Image($r("app.media.minus"))
+        .fillColor(Color.White)
+        .width(48)
+        .height(48)
+        .margin({ right: 24 })
+        .onClick((e) => {
+          if (count > 1) {
+            PromptActionClass.updateDialog(count - 1)
+          }
+        })
+      Text(`${count}`)
+        .fontColor(Color.White)
+        .fontSize(64)
+        .fontWeight(FontWeight.Bold)
+      Image($r("app.media.plus"))
+        .fillColor(Color.White)
+        .width(48)
+        .height(48)
+        .margin({ left: 24 })
+        .onClick((e) => {
+          PromptActionClass.updateDialog(count + 1)
+        })
+    }.justifyContent(FlexAlign.Center)
+    .margin({ bottom: 24 })
 
+    Image($r("app.media.check"))
+      .fillColor(Color.White)
+      .width(48)
+      .height(48)
+      .onClick((e) => {
+        PromptActionClass.closeDialog(count)
+      })
+  }.justifyContent(FlexAlign.Center)
 }
 
-@ComponentV2
-export struct SettingPomodoroSetting {
-  @Consumer("")
-  build() {
-    NavDestination()
-      .mode(NavDestinationMode.DIALOG)
+class PromptActionParam<T> {
+  value: T
 
+  constructor(value: T) {
+    this.value = value
+  }
+}
+
+class PromptActionClass {
+  static ctx?: UIContext;
+  static contentNode?: ComponentContent<Object>;
+  static options?: promptAction.BaseDialogOptions;
+  static onResult?: (v: Object | undefined) => void
+
+  static updateDialog(value: Object) {
+    PromptActionClass.contentNode?.update(value)
+  }
+
+  static async openDialog(ctx: UIContext, contentNode: ComponentContent<Object>,
+    onResult?: (v: Object | undefined) => void, options?: promptAction.BaseDialogOptions) {
+    PromptActionClass.ctx = ctx
+    PromptActionClass.contentNode = contentNode
+    PromptActionClass.onResult = onResult
+    let opts = options ?? {}
+    opts.autoCancel = false
+    opts.maskColor = getMaskColor(0x66)
+    await ctx.getPromptAction().openCustomDialog(contentNode, opts)
+  }
+
+  static async closeDialog(result?: Object) {
+    if (PromptActionClass.ctx && PromptActionClass.contentNode) {
+      await PromptActionClass.ctx.getPromptAction().closeCustomDialog(PromptActionClass.contentNode)
+      PromptActionClass.onResult && PromptActionClass.onResult(result)
+    }
   }
 }
