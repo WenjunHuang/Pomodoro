@@ -132,7 +132,7 @@ export struct PomodoroTimer {
 
   @Monitor("initState")
   onInitStateChanged() {
-    if (this.initState.type === 'transition') {
+    if (this.initState.type === "stopped" || this.initState.type === "transition") {
       this.state = this.initState
     }
   }
@@ -152,33 +152,35 @@ export struct PomodoroTimer {
       this.isCircleBouncing = false
     }
 
-    // 启动扇形动画
     if (after.type === 'running') {
       this.startTicking()
     } else if (after.type === 'transition') {
       const from = after.from
       const to = after.to
-      if (from.type === 'running' || from.type === 'paused') {
+      if ((from.type === 'running' || from.type === 'paused') && to.type === 'stopped') {
+        // 从运行或暂停状态到停止状态，先运行扇形动画
         this.scheduleCycleAnimation(from.elapsedTimeMS, from.totalTimeMS, from.totalTimeMS, () => {
           this.state = to
         })
       } else if (from.type === 'stopped' && to.type === 'running') {
+        // 启动时钟前，先显示扇形动画
         this.scheduleCycleAnimation(to.totalTimeMS, 0, to.totalTimeMS, () => {
           this.state = to
         })
+      } else {
+        // 由外部设置的状态变更，直接应用目标状态
+        this.state = to
       }
     }
-
 
     if (after.type !== 'transition') {
       this.onStateChanged && this.onStateChanged(after)
     }
-
   }
 
   @Builder
   buildRunning() {
-    if (this.state.type !== 'stopped') {
+    if (this.state.type !== 'stopped' && this.state.type !== 'finished') {
       Canvas(this.pomodoroContext)
         .width('100%')
         .height('100%')

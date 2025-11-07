@@ -3,7 +3,12 @@ import { Setting } from '../model/Setting'
 import { PersistenceV2 } from '@kit.ArkUI'
 import { getDisabledColor } from '../utils/ColorUtils'
 import { padNumber, remainingMinutes, remainingSecondsWithoutMinutes } from '../utils/DateTimeUtils'
-
+import { audio } from '@kit.AudioKit'
+import { media } from '@kit.MediaKit';
+import { url } from '@kit.ArkTS'
+import resourceManager from '@ohos.resourceManager'
+import { common } from '@kit.AbilityKit'
+import { playFinishedSound, playSound } from '../utils/SoundUtils'
 
 enum Phrase {
   POMODORO,
@@ -133,6 +138,10 @@ export struct PomodoroClockPage {
         autoStart: false,
         onStateChanged: (state) => {
           this.timerState = state
+          if (state.type === 'finished') {
+            let resDir = this.getUIContext().getHostContext()!!.resourceDir
+            playSound(`file://${resDir}/glass.wav`)
+          }
         },
       })
         .width('80%')
@@ -145,6 +154,9 @@ export struct PomodoroClockPage {
         initState: this.timerState,
         onStateChanged: (state) => {
           this.timerState = state
+          if (state.type === 'finished') {
+            playFinishedSound(this.getUIContext().getHostContext()!!)
+          }
         },
       }).width('80%')
         .margin({ bottom: 64 })
