@@ -3,6 +3,13 @@ import { Setting } from '../model/Setting'
 import { PersistenceV2 } from '@kit.ArkUI'
 import { getDisabledColor } from '../utils/ColorUtils'
 
+
+enum Phrase {
+  POMODORO,
+  SHORT_BREAK,
+  LONG_BREAK
+}
+
 @Builder
 export function PomodoroClockPageBuilder() {
   PomodoroClockPage()
@@ -12,6 +19,8 @@ export function PomodoroClockPageBuilder() {
 export struct PomodoroClockPage {
   @Local settings: Setting = PersistenceV2.globalConnect({ type: Setting, defaultCreator: () => new Setting() })!
   @Consumer('pageInfos') pageInfos: NavPathStack = new NavPathStack()
+  @Local phrase: Phrase = Phrase.POMODORO
+  @Local isClickEnabled: boolean = true
 
   /**
    * 构建单个进度点
@@ -61,6 +70,43 @@ export struct PomodoroClockPage {
     .justifyContent(FlexAlign.SpaceEvenly)
   }
 
+  /**
+   * 构建阶段信息显示行
+   * @param phraseText - 阶段文本
+   * @param duration - 持续时间
+   */
+  @Builder
+  private buildPhraseInfoRow(phraseText: Resource, duration: number) {
+    Row() {
+      Image($r("app.media.up_down"))
+        .fillColor(Color.White)
+        .height(24)
+      Text(phraseText)
+        .phraseTextStyle()
+      Text(`${duration}`)
+        .phraseDurationTextStyle()
+        .margin({ left: 4 })
+      Text($r("app.string.min"))
+        .phraseDurationTextStyle()
+        .margin({ left: 4 })
+    }.justifyContent(FlexAlign.Center)
+    .transition(TransitionEffect.OPACITY
+      .combine(TransitionEffect.translate({ y: "50%" }))
+      .animation({ duration: 200, curve: Curve.Ease }))
+    .margin({ top: 64 })
+    .onClick(() => {
+      if (this.isClickEnabled) {
+        if (this.phrase === Phrase.POMODORO) {
+          this.phrase = Phrase.SHORT_BREAK
+        } else if (this.phrase === Phrase.SHORT_BREAK) {
+          this.phrase = Phrase.LONG_BREAK
+        } else {
+          this.phrase = Phrase.POMODORO
+        }
+      }
+    })
+  }
+
   build() {
     NavDestination() {
       Column() {
@@ -71,10 +117,13 @@ export struct PomodoroClockPage {
             .width(24)
             .height(24)
             .fillColor(Color.White)
+            .visibility(this.isClickEnabled ? Visibility.Visible : Visibility.Hidden)
         }
         .width('100%')
         .onClick(() => {
-          this.pageInfos.pushDestination({ name: "Setting" })
+          if (this.isClickEnabled) {
+            this.pageInfos.pushDestination({ name: "Setting" })
+          }
         })
         .margin({ bottom: 24 })
 
@@ -82,6 +131,15 @@ export struct PomodoroClockPage {
         PomodoroTimer({
           pomodoroCount: this.settings.pomodoro,
           pomodoroSeconds: 60,
+          autoStart: true,
+          onStarted: () => {
+            this.isClickEnabled = false
+          },
+          onCancelled: () => {
+            this.isClickEnabled = true
+          },
+          onFinished: () => {
+          },
           onRunning: (elapsed, total) => {
             // 空回调，可根据需要添加处理逻辑
           },
@@ -97,6 +155,15 @@ export struct PomodoroClockPage {
         .width("50%")
         .justifyContent(FlexAlign.Center)
 
+        // 阶段信息显示行
+        if (this.phrase === Phrase.POMODORO) {
+          this.buildPhraseInfoRow($r("app.string.setting_pomodoro"), this.settings.pomodoro)
+        } else if (this.phrase === Phrase.SHORT_BREAK) {
+          this.buildPhraseInfoRow($r("app.string.setting_break"), this.settings.break)
+        } else if (this.phrase === Phrase.LONG_BREAK) {
+          this.buildPhraseInfoRow($r("app.string.setting_long_break"), this.settings.longBreak)
+        }
+
         Blank()
       }
       .padding(16)
@@ -106,4 +173,18 @@ export struct PomodoroClockPage {
     .backgroundColor(this.settings.colorTheme)
     .hideTitleBar(true)
   }
+}
+
+@Extend(Text)
+function phraseTextStyle() {
+  .fontColor(Color.White)
+  .fontSize(12)
+  .textAlign(TextAlign.Center)
+}
+
+@Extend(Text)
+function phraseDurationTextStyle() {
+  .fontColor(getDisabledColor("#FFFFFF", 0xcc))
+  .fontSize(12)
+  .textAlign(TextAlign.Center)
 }

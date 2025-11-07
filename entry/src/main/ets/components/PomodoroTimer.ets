@@ -54,6 +54,7 @@ export struct PomodoroTimer {
   @Param onStarted?: () => void = undefined
   @Param onRunning?: (elapsedTimeMS: number, totalTimeMS: number) => void = undefined
   @Param onResume?: () => void = undefined
+  @Param autoStart: boolean = false
   @Param @Require pomodoroCount: number
   @Param @Require pomodoroSeconds: number
   @Local isCircleBouncing: boolean = false
@@ -181,6 +182,15 @@ export struct PomodoroTimer {
         .height('100%')
         .opacity(this.state.type !== 'paused' ? 1.0 : 0.5)
         .animation({ curve: curves.springMotion(0.2) })
+    }
+  }
+
+  aboutToAppear(): void {
+    if (this.autoStart) {
+      this.state = {
+        type: 'running',
+        elapsedTimeMS: 0, totalTimeMS: this.pomodoroCount * this.pomodoroSeconds * 1000
+      }
     }
   }
 

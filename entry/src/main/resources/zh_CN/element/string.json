@@ -83,6 +83,10 @@
     {
       "name": "setting_rate_us",
       "value": "给我们评分"
+    },
+    {
+      "name": "min",
+      "value": "分钟"
     }
   ]
 }
