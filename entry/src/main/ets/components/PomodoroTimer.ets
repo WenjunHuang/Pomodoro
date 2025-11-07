@@ -1,5 +1,6 @@
 import { curves } from '@kit.ArkUI';
 import { drawCircleSector, drawTicks } from '../utils/DrawingUtils';
+import { PomodoroTicker } from './PomodoroTicker';
 
 interface Running {
   type: 'running';
@@ -59,12 +60,8 @@ export struct PomodoroTimer {
   @Param @Require pomodoroSeconds: number
   @Local isCircleBouncing: boolean = false
   @Local state: PomodoroState = { type: 'stopped' }
-  @Local tickLength: number = 0
-  private pomodoroContext: CanvasRenderingContext2D = new CanvasRenderingContext2D(new RenderingContextSettings(true))
-  private tickContext: CanvasRenderingContext2D = new CanvasRenderingContext2D(new RenderingContextSettings(true))
   private tickTimer?: number
-
-  private static readonly MAX_TICK_LENGTH: number = 8
+  private pomodoroContext: CanvasRenderingContext2D = new CanvasRenderingContext2D(new RenderingContextSettings(true))
   private static readonly FPS: number = 90
   private static readonly TICK_MS: number = 1000 / PomodoroTimer.FPS // fps: 90
   private static readonly CIRCLE_STEPS: number = Math.floor(PomodoroTimer.FPS / 2) // 因为每秒90帧，所以45帧等于半秒
@@ -237,12 +234,11 @@ export struct PomodoroTimer {
   @Builder
   buildCycleBorder(bouncing: boolean) {
     Stack() {
-      Canvas(this.tickContext)
-        .width('100%')
-        .height('100%')
-        .onReady(() => {
-          drawTicks(this.tickContext, this.pomodoroCount, 8, Color.White);
-        });
+      PomodoroTicker({
+        tickLength: PomodoroTicker.MAX_TICK_LENGTH,
+        ticksCount: this.pomodoroCount,
+        tickAnim: !bouncing && (this.state.type === 'stopped' || this.state.type === 'finished')
+      })
 
       Column() {
         Column()
@@ -272,7 +268,7 @@ export struct PomodoroTimer {
       .animation({ duration: 200, delay: 200 }), TransitionEffect.IDENTITY) :
       TransitionEffect.IDENTITY)
     .gesture(TapGesture()
-      .onAction((event) => {
+      .onAction(() => {
         if (this.state.type === 'stopped') {
           this.state = {
             type: 'transition',

@@ -113,13 +113,62 @@ export struct PomodoroClockPage {
     })
   }
 
-  private getPhrasePomodoroCount() {
+  @Builder
+  buildTimer() {
     if (this.phrase === Phrase.POMODORO) {
-      return this.settings.pomodoro
+      PomodoroTimer({
+        pomodoroCount: this.settings.pomodoro,
+        pomodoroSeconds: 60,
+        autoStart: false,
+        onStarted: () => {
+          this.isClickEnabled = false
+        },
+        onCancelled: () => {
+          this.isClickEnabled = true
+        },
+        onFinished: () => {
+        },
+        onRunning: (elapsed, total) => {
+          // 空回调，可根据需要添加处理逻辑
+        },
+      }).width('80%')
+        .margin({ bottom: 64 })
     } else if (this.phrase === Phrase.SHORT_BREAK) {
-      return this.settings.break
+      PomodoroTimer({
+        pomodoroCount: this.settings.break,
+        pomodoroSeconds: 60,
+        autoStart: false,
+        onStarted: () => {
+          this.isClickEnabled = false
+        },
+        onCancelled: () => {
+          this.isClickEnabled = true
+        },
+        onFinished: () => {
+        },
+        onRunning: (elapsed, total) => {
+          // 空回调，可根据需要添加处理逻辑
+        },
+      }).width('80%')
+        .margin({ bottom: 64 })
     } else {
-      return this.settings.longBreak
+      PomodoroTimer({
+        pomodoroCount: this.settings.longBreak,
+        pomodoroSeconds: 60,
+        autoStart: false,
+        onStarted: () => {
+          this.isClickEnabled = false
+        },
+        onCancelled: () => {
+          this.isClickEnabled = true
+        },
+        onFinished: () => {
+        },
+        onRunning: (elapsed, total) => {
+          // 空回调，可根据需要添加处理逻辑
+        },
+      }).width('80%')
+        .margin({ bottom: 64 })
     }
   }
 
@@ -144,23 +193,7 @@ export struct PomodoroClockPage {
         .margin({ bottom: 24 })
 
         // 番茄钟计时器
-        PomodoroTimer({
-          pomodoroCount: this.getPhrasePomodoroCount(),
-          pomodoroSeconds: 60,
-          autoStart: false,
-          onStarted: () => {
-            this.isClickEnabled = false
-          },
-          onCancelled: () => {
-            this.isClickEnabled = true
-          },
-          onFinished: () => {
-          },
-          onRunning: (elapsed, total) => {
-            // 空回调，可根据需要添加处理逻辑
-          },
-        }).width('80%')
-          .margin({ bottom: 64 })
+        this.buildTimer()
 
         // 进度显示区域
         Row() {

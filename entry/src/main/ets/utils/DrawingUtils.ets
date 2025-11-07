@@ -5,34 +5,6 @@
  * @param tickLength 刻度长度
  * @param color 颜色
  */
-export function drawTicks(context: CanvasRenderingContext2D, ticksCount: number, tickLength: number, color: Color) {
-  // 获取Canvas实际绘制尺寸
-  const width = context.width
-  const height = context.height
-  const centerX = width / 2
-  const centerY = height / 2
-  const radius = Math.min(width, height) / 2 // 取短边为最大半径
-  if (ticksCount <= 0) {
-    return
-  }
-
-  context.beginPath()
-  for (let index = 0; index < ticksCount; index++) {
-    const theta = index * (2 * Math.PI / ticksCount)
-    const fromX = centerX - (radius - tickLength) * Math.sin(theta)
-    const fromY = centerY - (radius - tickLength) * Math.cos(theta)
-    const toX = centerX - radius * Math.sin(theta)
-    const toY = centerY - radius * Math.cos(theta)
-    context.moveTo(fromX, fromY)
-    context.lineTo(toX, toY)
-  }
-  context.closePath()
-
-  // 填充样式设置
-  context.lineWidth = 2
-  context.strokeStyle = color.toString() // 设置填充颜色
-  context.stroke()
-}
 
 /**
  * 绘制圆形扇形
@@ -41,7 +13,8 @@ export function drawTicks(context: CanvasRenderingContext2D, ticksCount: number,
  * @param endAngle 结束角度
  * @param color 颜色
  */
-export function drawCircleSector(context: CanvasRenderingContext2D, startAngle: number, endAngle: number, color: Color) {
+export function drawCircleSector(context: CanvasRenderingContext2D, startAngle: number, endAngle: number,
+  color: Color) {
   // 获取Canvas实际绘制尺寸
   const width = context.width
   const height = context.height
@@ -67,4 +40,36 @@ export function drawCircleSector(context: CanvasRenderingContext2D, startAngle: 
     context.fillStyle = color.toString() // 设置填充颜色
     context.fill()
   }
+}
+
+export function drawTicks(context: CanvasRenderingContext2D, ticksCount: number, tickLength: number, drawLength: number,
+  color: Color) {
+  // 获取Canvas实际绘制尺寸
+  const width = context.width
+  const height = context.height
+  const centerX = width / 2
+  const centerY = height / 2
+  const radius = Math.min(width, height) / 2 // 取短边为最大半径
+  if (ticksCount <= 0) {
+    return
+  }
+
+  context.clearRect(0, 0, width, height)
+
+  context.beginPath()
+  for (let index = 0; index < ticksCount; index++) {
+    const theta = index * (2 * Math.PI / ticksCount)
+    const fromX = centerX - (radius - tickLength) * Math.sin(theta)
+    const fromY = centerY - (radius - tickLength) * Math.cos(theta)
+    const toX = centerX - (radius - tickLength + drawLength) * Math.sin(theta)
+    const toY = centerY - (radius - tickLength + drawLength) * Math.cos(theta)
+    context.moveTo(fromX, fromY)
+    context.lineTo(toX, toY)
+  }
+  context.closePath()
+
+  // 填充样式设置
+  context.lineWidth = 2
+  context.strokeStyle = color.toString() // 设置填充颜色
+  context.stroke()
 }
