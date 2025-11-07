@@ -59,9 +59,12 @@ export struct PomodoroTimer {
   @Param @Require pomodoroSeconds: number
   @Local isCircleBouncing: boolean = false
   @Local state: PomodoroState = { type: 'stopped' }
+  @Local tickLength: number = 0
   private pomodoroContext: CanvasRenderingContext2D = new CanvasRenderingContext2D(new RenderingContextSettings(true))
   private tickContext: CanvasRenderingContext2D = new CanvasRenderingContext2D(new RenderingContextSettings(true))
   private tickTimer?: number
+
+  private static readonly MAX_TICK_LENGTH: number = 8
   private static readonly FPS: number = 90
   private static readonly TICK_MS: number = 1000 / PomodoroTimer.FPS // fps: 90
   private static readonly CIRCLE_STEPS: number = Math.floor(PomodoroTimer.FPS / 2) // 因为每秒90帧，所以45帧等于半秒

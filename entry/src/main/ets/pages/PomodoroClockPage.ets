@@ -22,6 +22,11 @@ export struct PomodoroClockPage {
   @Local phrase: Phrase = Phrase.POMODORO
   @Local isClickEnabled: boolean = true
 
+  @Monitor("phrase")
+  onPhraseChanged() {
+
+  }
+
   /**
    * 构建单个进度点
    * @param index - 进度点索引
@@ -90,9 +95,10 @@ export struct PomodoroClockPage {
         .phraseDurationTextStyle()
         .margin({ left: 4 })
     }.justifyContent(FlexAlign.Center)
-    .transition(TransitionEffect.OPACITY
-      .combine(TransitionEffect.translate({ y: "50%" }))
-      .animation({ duration: 200, curve: Curve.Ease }))
+    .transition(
+      TransitionEffect.OPACITY.combine(
+        TransitionEffect.asymmetric(TransitionEffect.translate({ y: "-100%" }),
+          TransitionEffect.translate({ y: "100%" }))).animation({ duration: 200, curve: Curve.EaseInOut }))
     .margin({ top: 64 })
     .onClick(() => {
       if (this.isClickEnabled) {
@@ -105,6 +111,16 @@ export struct PomodoroClockPage {
         }
       }
     })
+  }
+
+  private getPhrasePomodoroCount() {
+    if (this.phrase === Phrase.POMODORO) {
+      return this.settings.pomodoro
+    } else if (this.phrase === Phrase.SHORT_BREAK) {
+      return this.settings.break
+    } else {
+      return this.settings.longBreak
+    }
   }
 
   build() {
@@ -129,9 +145,9 @@ export struct PomodoroClockPage {
 
         // 番茄钟计时器
         PomodoroTimer({
-          pomodoroCount: this.settings.pomodoro,
+          pomodoroCount: this.getPhrasePomodoroCount(),
           pomodoroSeconds: 60,
-          autoStart: true,
+          autoStart: false,
           onStarted: () => {
             this.isClickEnabled = false
           },
