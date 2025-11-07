@@ -1,7 +1,8 @@
-import { PomodoroTimer } from '../components/PomodoroTimer'
+import { PomodoroTimer, TimerState } from '../components/PomodoroTimer'
 import { Setting } from '../model/Setting'
 import { PersistenceV2 } from '@kit.ArkUI'
 import { getDisabledColor } from '../utils/ColorUtils'
+import { padNumber, remainingMinutes, remainingSecondsWithoutMinutes } from '../utils/DateTimeUtils'
 
 
 enum Phrase {
@@ -17,15 +18,10 @@ export function PomodoroClockPageBuilder() {
 
 @ComponentV2
 export struct PomodoroClockPage {
-  @Local settings: Setting = PersistenceV2.globalConnect({ type: Setting, defaultCreator: () => new Setting() })!
+  @Local settings: Setting = PersistenceV2.connect(Setting, () => new Setting())!
   @Consumer('pageInfos') pageInfos: NavPathStack = new NavPathStack()
   @Local phrase: Phrase = Phrase.POMODORO
-  @Local isClickEnabled: boolean = true
-
-  @Monitor("phrase")
-  onPhraseChanged() {
-
-  }
+  @Local timerState: TimerState = { type: "stopped" }
 
   /**
    * 构建单个进度点
@@ -75,20 +71,36 @@ export struct PomodoroClockPage {
     .justifyContent(FlexAlign.SpaceEvenly)
   }
 
+  @Builder
+  private buildPhraseRunning(phraseText: ResourceStr) {
+    Column() {
+      Text(phraseText)
+        .phraseTextStyle()
+        .margin({ bottom: 8 })
+      if (this.timerState.type === "running" || this.timerState.type === 'paused') {
+        Text(`${remainingMinutes(this.timerState.elapsedTimeMS,
+          this.timerState.totalTimeMS)}:${padNumber(remainingSecondsWithoutMinutes(this.timerState.elapsedTimeMS,
+          this.timerState.totalTimeMS), 2)}`)
+          .phraseTextStyle()
+      }
+    }
+    .margin({ top: 64 })
+  }
+
   /**
    * 构建阶段信息显示行
    * @param phraseText - 阶段文本
    * @param duration - 持续时间
    */
   @Builder
-  private buildPhraseInfoRow(phraseText: Resource, duration: number) {
+  private buildPhraseInfoRow(param: PhraseInfoTextParam) {
     Row() {
       Image($r("app.media.up_down"))
         .fillColor(Color.White)
         .height(24)
-      Text(phraseText)
+      Text(param.phraseText)
         .phraseTextStyle()
-      Text(`${duration}`)
+      Text(`${param.duration}`)
         .phraseDurationTextStyle()
         .margin({ left: 4 })
       Text($r("app.string.min"))
@@ -101,14 +113,12 @@ export struct PomodoroClockPage {
           TransitionEffect.translate({ y: "100%" }))).animation({ duration: 200, curve: Curve.EaseInOut }))
     .margin({ top: 64 })
     .onClick(() => {
-      if (this.isClickEnabled) {
-        if (this.phrase === Phrase.POMODORO) {
-          this.phrase = Phrase.SHORT_BREAK
-        } else if (this.phrase === Phrase.SHORT_BREAK) {
-          this.phrase = Phrase.LONG_BREAK
-        } else {
-          this.phrase = Phrase.POMODORO
-        }
+      if (this.phrase === Phrase.POMODORO) {
+        this.phrase = Phrase.SHORT_BREAK
+      } else if (this.phrase === Phrase.SHORT_BREAK) {
+        this.phrase = Phrase.LONG_BREAK
+      } else {
+        this.phrase = Phrase.POMODORO
       }
     })
   }
@@ -119,35 +129,22 @@ export struct PomodoroClockPage {
       PomodoroTimer({
         pomodoroCount: this.settings.pomodoro,
         pomodoroSeconds: 60,
+        initState: this.timerState,
         autoStart: false,
-        onStarted: () => {
-          this.isClickEnabled = false
+        onStateChanged: (state) => {
+          this.timerState = state
         },
-        onCancelled: () => {
-          this.isClickEnabled = true
-        },
-        onFinished: () => {
-        },
-        onRunning: (elapsed, total) => {
-          // 空回调，可根据需要添加处理逻辑
-        },
-      }).width('80%')
+      })
+        .width('80%')
         .margin({ bottom: 64 })
     } else if (this.phrase === Phrase.SHORT_BREAK) {
       PomodoroTimer({
         pomodoroCount: this.settings.break,
         pomodoroSeconds: 60,
         autoStart: false,
-        onStarted: () => {
-          this.isClickEnabled = false
-        },
-        onCancelled: () => {
-          this.isClickEnabled = true
-        },
-        onFinished: () => {
-        },
-        onRunning: (elapsed, total) => {
-          // 空回调，可根据需要添加处理逻辑
+        initState: this.timerState,
+        onStateChanged: (state) => {
+          this.timerState = state
         },
       }).width('80%')
         .margin({ bottom: 64 })
@@ -156,16 +153,10 @@ export struct PomodoroClockPage {
         pomodoroCount: this.settings.longBreak,
         pomodoroSeconds: 60,
         autoStart: false,
-        onStarted: () => {
-          this.isClickEnabled = false
-        },
-        onCancelled: () => {
-          this.isClickEnabled = true
-        },
-        onFinished: () => {
-        },
-        onRunning: (elapsed, total) => {
-          // 空回调，可根据需要添加处理逻辑
+        initState: this.timerState,
+        onStateChanged: (state) => {
+          this.timerState = state
+          console.log(`${state.type}`)
         },
       }).width('80%')
         .margin({ bottom: 64 })
@@ -182,13 +173,13 @@ export struct PomodoroClockPage {
             .width(24)
             .height(24)
             .fillColor(Color.White)
-            .visibility(this.isClickEnabled ? Visibility.Visible : Visibility.Hidden)
+            .visibility(this.timerState.type === 'stopped' ? Visibility.Visible : Visibility.Hidden)
         }
         .width('100%')
+        .enabled(this.timerState.type === 'stopped')
         .onClick(() => {
-          if (this.isClickEnabled) {
-            this.pageInfos.pushDestination({ name: "Setting" })
-          }
+          this.pageInfos.pushDestination({ name: "Setting" }).catch(() => {
+          })
         })
         .margin({ bottom: 24 })
 
@@ -205,15 +196,35 @@ export struct PomodoroClockPage {
         .justifyContent(FlexAlign.Center)
 
         // 阶段信息显示行
-        if (this.phrase === Phrase.POMODORO) {
-          this.buildPhraseInfoRow($r("app.string.setting_pomodoro"), this.settings.pomodoro)
-        } else if (this.phrase === Phrase.SHORT_BREAK) {
-          this.buildPhraseInfoRow($r("app.string.setting_break"), this.settings.break)
-        } else if (this.phrase === Phrase.LONG_BREAK) {
-          this.buildPhraseInfoRow($r("app.string.setting_long_break"), this.settings.longBreak)
+        if (this.timerState.type === 'stopped' || this.timerState.type === 'finished') {
+          if (this.phrase === Phrase.POMODORO) {
+            this.buildPhraseInfoRow({ phraseText: $r("app.string.setting_pomodoro"), duration: this.settings.pomodoro })
+          } else if (this.phrase === Phrase.SHORT_BREAK) {
+            this.buildPhraseInfoRow({ phraseText: $r("app.string.setting_break"), duration: this.settings.break })
+          } else if (this.phrase === Phrase.LONG_BREAK) {
+            this.buildPhraseInfoRow({
+              phraseText: $r("app.string.setting_long_break"),
+              duration: this.settings.longBreak
+            })
+          }
+        } else if (this.timerState.type === 'running' || this.timerState.type === 'paused') {
+          if (this.phrase === Phrase.POMODORO) {
+            this.buildPhraseRunning($r("app.string.setting_pomodoro"))
+          } else if (this.phrase === Phrase.SHORT_BREAK) {
+            this.buildPhraseRunning($r("app.string.setting_break"))
+          } else if (this.phrase === Phrase.LONG_BREAK) {
+            this.buildPhraseRunning($r("app.string.setting_long_break"))
+          }
         }
 
         Blank()
+        if (this.timerState.type === 'paused') {
+          Text($r("app.string.reset"))
+            .phraseTextStyle()
+            .onClick(() => {
+              this.timerState = { type: "transition", from: this.timerState, to: { type: "stopped" } }
+            })
+        }
       }
       .padding(16)
       .width('100%')
@@ -236,4 +247,9 @@ function phraseDurationTextStyle() {
   .fontColor(getDisabledColor("#FFFFFF", 0xcc))
   .fontSize(12)
   .textAlign(TextAlign.Center)
+}
+
+class PhraseInfoTextParam {
+  phraseText: ResourceStr = ""
+  duration: number = 0
 }

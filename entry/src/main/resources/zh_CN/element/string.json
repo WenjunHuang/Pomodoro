@@ -87,6 +87,10 @@
     {
       "name": "min",
       "value": "分钟"
+    },
+    {
+      "name": "reset",
+      "value": "重置"
     }
   ]
 }

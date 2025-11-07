@@ -1,70 +1,70 @@
-import { curves } from '@kit.ArkUI';
+import { AnimatorResult, curves } from '@kit.ArkUI';
 import { drawCircleSector, drawTicks } from '../utils/DrawingUtils';
 import { PomodoroTicker } from './PomodoroTicker';
 
-interface Running {
+export interface Running {
   type: 'running';
   elapsedTimeMS: number;
   totalTimeMS: number;
 }
 
-interface Paused {
+export interface Paused {
   type: 'paused';
   elapsedTimeMS: number;
   totalTimeMS: number;
 }
 
-interface Stopped {
+export interface Stopped {
   type: 'stopped';
 }
 
-interface Finished {
+export interface Finished {
   type: 'finished'
 }
 
-interface Transition {
+export interface Transition {
   type: 'transition';
-  from: PomodoroState;
-  to: PomodoroState;
+  from: TimerState;
+  to: TimerState;
 }
 
-type PomodoroState = Running | Paused | Stopped | Finished | Transition
-
-@ObservedV2
-class BouncingBorderModifier implements AttributeModifier<CommonAttribute> {
-  @Trace isBouncing: boolean = false
-
-  constructor(isBouncing?: boolean) {
-    this.isBouncing = isBouncing ?? false
-  }
-
-  applyNormalAttribute(instance: CommonAttribute): void {
-    if (this.isBouncing) {
-      instance.transition(TransitionEffect.asymmetric(TransitionEffect.scale({ x: 1.05, y: 1.05 })
-        .animation({ curve: curves.springMotion(0.6, 1.2), delay: 100 }), TransitionEffect.IDENTITY))
-    } else {
-    }
-  }
-}
+export type TimerState = Running | Paused | Stopped | Finished | Transition
 
 @ComponentV2
 export struct PomodoroTimer {
-  @Param onFinished?: () => void = undefined
-  @Param onPaused?: (elapsedTimeMS: number) => void = undefined
-  @Param onCancelled?: () => void = undefined
-  @Param onStarted?: () => void = undefined
-  @Param onRunning?: (elapsedTimeMS: number, totalTimeMS: number) => void = undefined
-  @Param onResume?: () => void = undefined
+  @Require @Param pomodoroCount: number
+  @Require @Param pomodoroSeconds: number
+  @Event onStateChanged?: (state: TimerState) => void = undefined
   @Param autoStart: boolean = false
-  @Param @Require pomodoroCount: number
-  @Param @Require pomodoroSeconds: number
+  @Param initState: TimerState = { type: "stopped" }
   @Local isCircleBouncing: boolean = false
-  @Local state: PomodoroState = { type: 'stopped' }
+  @Local circleScale: number = 1
+  @Local state: TimerState = this.initState
   private tickTimer?: number
   private pomodoroContext: CanvasRenderingContext2D = new CanvasRenderingContext2D(new RenderingContextSettings(true))
   private static readonly FPS: number = 90
   private static readonly TICK_MS: number = 1000 / PomodoroTimer.FPS // fps: 90
   private static readonly CIRCLE_STEPS: number = Math.floor(PomodoroTimer.FPS / 2) // 因为每秒90帧，所以45帧等于半秒
+  private bouncingAnim: AnimatorResult = this.getUIContext().createAnimator({
+    duration: 200,
+    easing: "ease-in-out",
+    delay: 0,
+    fill: "both",
+    direction: "alternate",
+    iterations: 2,
+    begin: 1,
+    end: 1.05,
+  })
+
+  @Monitor("isCircleBouncing")
+  onCircleBouncing() {
+    if (this.isCircleBouncing) {
+      this.bouncingAnim.cancel()
+      this.bouncingAnim.onFrame = (value) => this.circleScale = value
+      this.bouncingAnim.play()
+      this.isCircleBouncing = false
+    }
+  }
 
   private clearTimer() {
     if (this.tickTimer !== undefined) {
@@ -93,8 +93,12 @@ export struct PomodoroTimer {
         return
       }
       this.state.elapsedTimeMS += PomodoroTimer.TICK_MS
+      this.onStateChanged && this.onStateChanged({
+        type: "running",
+        elapsedTimeMS: this.state.elapsedTimeMS,
+        totalTimeMS: this.state.totalTimeMS
+      })
       this.drawProgress(this.state.elapsedTimeMS, this.state.totalTimeMS)
-      this.onRunning && this.onRunning(this.state.elapsedTimeMS, this.state.totalTimeMS)
       this.schedule(tick)
     }
     this.schedule(tick)
@@ -126,10 +130,17 @@ export struct PomodoroTimer {
     this.schedule(tick)
   }
 
+  @Monitor("initState")
+  onInitStateChanged() {
+    if (this.initState.type === 'transition') {
+      this.state = this.initState
+    }
+  }
+
   @Monitor('state')
   onStatusChanged(monitor: IMonitor) {
-    let before = monitor.value<PomodoroState>('state')!.before
-    let after = monitor.value<PomodoroState>('state')!.now
+    let before = monitor.value<TimerState>('state')!.before
+    let after = monitor.value<TimerState>('state')!.now
 
     this.clearTimer()
 
@@ -159,19 +170,10 @@ export struct PomodoroTimer {
     }
 
 
-    // 调用回调函数
-    if (after.type === 'stopped') {
-      this.onCancelled && this.onCancelled()
+    if (after.type !== 'transition') {
+      this.onStateChanged && this.onStateChanged(after)
     }
-    if (after.type === 'finished') {
-      this.onFinished && this.onFinished()
-    }
-    if (after.type === 'running') {
-      this.onStarted && this.onStarted()
-    }
-    if (after.type === 'paused') {
-      this.onPaused && this.onPaused(after.elapsedTimeMS)
-    }
+
   }
 
   @Builder
@@ -181,7 +183,7 @@ export struct PomodoroTimer {
         .width('100%')
         .height('100%')
         .opacity(this.state.type !== 'paused' ? 1.0 : 0.5)
-        .animation({ curve: curves.springMotion(0.2) })
+        .animation({ curve: Curve.Ease })
     }
   }
 
@@ -213,31 +215,30 @@ export struct PomodoroTimer {
           .width('30%')
           .height('30%')
           .fillColor(Color.White)
-          .transition(TransitionEffect.OPACITY.animation({ curve: curves.springMotion() }))
       } else if (this.state.type === 'stopped') {
         Image($r('app.media.play'))
           .width('30%')
           .height('30%')
           .fillColor(Color.White)
-          .transition(TransitionEffect.OPACITY.animation({ curve: curves.springMotion() }))
       }
 
+      // 必须这样写否则触发不了更新
       if (this.isCircleBouncing) {
-        this.buildCycleBorder(true)
+        this.buildCycleBorder()
       } else {
-        this.buildCycleBorder(false)
+        this.buildCycleBorder()
       }
     }
     .aspectRatio(1) // 强制宽高比1:1
   }
 
   @Builder
-  buildCycleBorder(bouncing: boolean) {
+  buildCycleBorder() {
     Stack() {
       PomodoroTicker({
         tickLength: PomodoroTicker.MAX_TICK_LENGTH,
         ticksCount: this.pomodoroCount,
-        tickAnim: !bouncing && (this.state.type === 'stopped' || this.state.type === 'finished')
+        tickAnim: !this.isCircleBouncing && (this.state.type === 'stopped' || this.state.type === 'finished')
       })
 
       Column() {
@@ -254,9 +255,13 @@ export struct PomodoroTimer {
     }
     .width('100%')
     .height('100%')
+    .scale({ x: this.circleScale, y: this.circleScale })
+    // .transition(this.isCircleBouncing ?
+    //   TransitionEffect.scale({ x: 1.0, y: 1.0 })
+    //     .animation({ duration: 10000, delay: 200, curve: Curve.EaseInOut }) : TransitionEffect.IDENTITY)
     .gesture(
       LongPressGesture()
-        .onAction((event) => {
+        .onAction(() => {
           if (this.state.type !== 'transition') {
             if (this.state.type === 'running' || this.state.type === 'paused') {
               this.state = { type: 'transition', from: this.state, to: { type: 'stopped' } };
@@ -264,9 +269,6 @@ export struct PomodoroTimer {
           }
         })
     )
-    .transition(bouncing ? TransitionEffect.asymmetric(TransitionEffect.scale({ x: 1.05, y: 1.05 })
-      .animation({ duration: 200, delay: 200 }), TransitionEffect.IDENTITY) :
-      TransitionEffect.IDENTITY)
     .gesture(TapGesture()
       .onAction(() => {
         if (this.state.type === 'stopped') {

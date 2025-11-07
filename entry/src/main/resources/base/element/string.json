@@ -87,6 +87,10 @@
     {
       "name": "min",
       "value": "MIN"
+    },
+    {
+      "name": "reset",
+      "value": "Reset"
     }
   ]
 }

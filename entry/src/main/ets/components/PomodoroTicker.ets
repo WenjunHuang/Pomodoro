@@ -16,11 +16,15 @@ export struct PomodoroTicker {
     drawTicks(this.tickContext, this.ticksCount, this.tickLength, progress, Color.White)
   }
 
+  @Monitor("tickLength","ticksCount")
+  onTickChanged(monitor:IMonitor){
+    drawTicks(this.tickContext, this.ticksCount, this.tickLength, this.tickLength, Color.White)
+  }
+
   build() {
     Canvas(this.tickContext)
       .width('100%')
       .height('100%')
-      .customProperty("tickerLength", this.tickLength)
       .onReady(() => {
         if (this.tickAnim) {
           let animator =

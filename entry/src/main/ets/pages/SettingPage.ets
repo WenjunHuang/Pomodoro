@@ -40,7 +40,7 @@ class NumCardParam {
 
 @ComponentV2
 export struct SettingPage {
-  @Local settings: Setting = PersistenceV2.globalConnect({ type: Setting, defaultCreator: () => new Setting() })!
+  @Local settings: Setting = PersistenceV2.connect( Setting,() => new Setting())!
   @Consumer('pageInfos') pageInfos: NavPathStack = new NavPathStack()
   private scroller: Scroller = new Scroller()
   // 颜色主题行数据
