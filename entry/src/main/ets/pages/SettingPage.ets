@@ -59,9 +59,19 @@ export struct SettingPage {
     NavDestination() {
       Scroll(this.scroller) {
         Column() {
+          Row() {
+            Image($r("app.media.angle_left"))
+              .fillColor(Color.White)
+              .width(24)
+              .height(24)
+              .onClick(() => this.pageInfos.pop())
+          }
+          .justifyContent(FlexAlign.Start)
+          .width('100%')
+
           Text($r("app.string.setting_durations"))
             .labelTextStyle()
-            .margin({ bottom: 24, top: 24 })
+            .margin({ bottom: 24, top: 8 })
           Row() {
             this.numberCard({
               duration: `${this.settings.pomodoro}`,
@@ -231,7 +241,7 @@ export struct SettingPage {
           .aspectRatio(1)
           .fillColor(param.isSwitchOnSelected ? Color.White : getDisabledColor("#FFFFFF"))
           .enabled(!param.isSwitchOnSelected)
-          .onClick(async (event) => {
+          .onClick(async () => {
             param.onSwitchOn && param.onSwitchOn()
           })
           .animation({ duration: 100, curve: Curve.Ease })
@@ -242,7 +252,7 @@ export struct SettingPage {
           .aspectRatio(1)
           .fillColor(param.isSwitchOffSelected ? Color.White : getDisabledColor("#FFFFFF"))
           .enabled(!param.isSwitchOffSelected)
-          .onClick((event) => {
+          .onClick(() => {
             param.onSwitchOff && param.onSwitchOff()
           })
           .animation({ duration: 100, curve: Curve.Ease })
@@ -273,7 +283,7 @@ export struct SettingPage {
     .backgroundColor(this.labelBackground())
     .animation({ duration: 200, curve: Curve.Ease })
     .layoutWeight(1)
-    .onClick((event) => {
+    .onClick(() => {
       param.onClick && param.onClick()
     })
   }
@@ -300,7 +310,7 @@ export struct SettingPage {
           }
           .layoutWeight(1)
           .aspectRatio(1)
-          .onClick((event) => {
+          .onClick(() => {
             this.settings.colorTheme = color
           })
         }
@@ -365,7 +375,7 @@ function numberSetting(param: NumberSettingParam) {
         .width(48)
         .height(48)
         .margin({ left: 24 })
-        .onClick((e) => {
+        .onClick(() => {
           PromptActionClass.updateDialog(param.setCount(param.count + 1))
         })
     }
@@ -375,7 +385,7 @@ function numberSetting(param: NumberSettingParam) {
       .fillColor(Color.White)
       .width(48)
       .height(48)
-      .onClick((e) => {
+      .onClick(() => {
         PromptActionClass.closeDialog(param.count)
       })
   }.justifyContent(FlexAlign.Center)
