@@ -2,15 +2,15 @@
   "string": [
     {
       "name": "module_desc",
-      "value": "模块描述"
+      "value": "番茄钟"
     },
     {
       "name": "EntryAbility_desc",
-      "value": "入口能力描述"
+      "value": "番茄钟"
     },
     {
       "name": "EntryAbility_label",
-      "value": "入口标签"
+      "value": "番茄钟"
     },
     {
       "name": "setting_pomodoro",
