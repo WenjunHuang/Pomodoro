@@ -155,6 +155,18 @@
     {
       "name": "setting_rateus",
       "value": "RATE US"
+    },
+    {
+      "name": "daily_goal",
+      "value": "Daily Goal Achieved!"
+    },
+    {
+      "name": "paused",
+      "value": "Paused"
+    },
+    {
+      "name": "running",
+      "value": "Running"
     }
   ]
 }

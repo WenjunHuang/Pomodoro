@@ -1,6 +1,7 @@
-import { PersistenceV2 } from '@kit.ArkUI';
+import { AppStorageV2, PersistenceV2 } from '@kit.ArkUI';
 import { Setting } from '../model/Setting';
-import { HOW_TO_PAGE, POMODORO_CLOCK_PAGE } from './Pages';
+import { setWindowKeep } from '../utils/WindowUtils';
+import { DAILY_GOAL_PAGE, HOW_TO_PAGE, POMODORO_CLOCK_PAGE } from './Pages';
 
 
 @Entry
@@ -11,6 +12,9 @@ export default struct Index {
   private firstPage: string = POMODORO_CLOCK_PAGE
 
   aboutToAppear(): void {
+    setWindowKeep(this.settings.keepPhoneAwake, this.getUIContext().getHostContext()!!)
+    AppStorageV2.connect(NavPathStack, () => this.pageInfos);
+
     if (this.settings.firstStartApp) {
       this.firstPage = HOW_TO_PAGE
       this.settings.firstStartApp = false
@@ -18,6 +22,7 @@ export default struct Index {
     } else {
       this.firstPage = POMODORO_CLOCK_PAGE
     }
+
   }
 
   build() {

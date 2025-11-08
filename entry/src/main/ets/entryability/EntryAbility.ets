@@ -1,33 +1,48 @@
 import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { window } from '@kit.ArkUI';
+import { AppStorageV2, window } from '@kit.ArkUI';
+import { ContextUtil } from '../utils/ContextUtil';
+import { Logger } from '../utils/LogUtil';
 
 const DOMAIN = 0x0000;
 
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     try {
+      ContextUtil.applicationContext = this.context.getApplicationContext();
       this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
-    } catch (err) {
-      hilog.error(DOMAIN, 'testTag', 'Failed to set colorMode. Cause: %{public}s', JSON.stringify(err));
+      if (want.parameters?.page) {
+        ContextUtil.wantUrl = want.parameters.page as string
+      }
+    } catch (error) {
     }
-    hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onCreate');
+  }
+
+  onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+    // let pageInfo = AppStorageV2.connect(NavPathStack, () => new NavPathStack())!
+    // Logger.info("Ability onNewWant")
+    // if (want.parameters?.page) {
+    //   let result = pageInfo.moveToTop(want.parameters?.page as string)
+    //   if (result === -1) {
+    //     pageInfo.replacePathByName(want.parameters?.page as string, null)
+    //   }
+    // }
   }
 
   onDestroy(): void {
-    hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onDestroy');
+    Logger.info('Ability destroyed')
   }
 
   onWindowStageCreate(windowStage: window.WindowStage): void {
     // Main window is created, set main page for this ability
-    hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
+    Logger.info('Ability onWindowStageCreate');
 
     windowStage.loadContent('pages/Index', (err) => {
       if (err.code) {
-        hilog.error(DOMAIN, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err));
+        Logger.error('Failed to load the content. Cause: %{public}s', JSON.stringify(err));
         return;
       }
-      hilog.info(DOMAIN, 'testTag', 'Succeeded in loading the content.');
+      Logger.info('Succeeded in loading the content.');
     });
   }
 

@@ -3,12 +3,10 @@ import { Setting } from '../model/Setting'
 import { PersistenceV2 } from '@kit.ArkUI'
 import { getDisabledColor } from '../utils/ColorUtils'
 import { padNumber, remainingMinutes, remainingSecondsWithoutMinutes } from '../utils/DateTimeUtils'
-import { audio } from '@kit.AudioKit'
-import { media } from '@kit.MediaKit';
-import { url } from '@kit.ArkTS'
-import resourceManager from '@ohos.resourceManager'
+import { playFinishedSound } from '../utils/SoundUtils'
+import { DAILY_GOAL_PAGE } from './Pages'
+import { LiveViewController } from '../utils/LiveViewUtils'
 import { common } from '@kit.AbilityKit'
-import { playFinishedSound, playSound } from '../utils/SoundUtils'
 
 enum Phrase {
   POMODORO,
@@ -25,8 +23,11 @@ export function PomodoroClockPageBuilder() {
 export struct PomodoroClockPage {
   @Local settings: Setting = PersistenceV2.connect(Setting, () => new Setting())!
   @Consumer('pageInfos') pageInfos: NavPathStack = new NavPathStack()
+  @Local finishedPomodoros: number = 0
   @Local phrase: Phrase = Phrase.POMODORO
+  @Local autoStart: boolean = false
   @Local timerState: TimerState = { type: "stopped" }
+  private liveViewController = new LiveViewController(this.getUIContext().getHostContext()! as common.UIAbilityContext)
 
   /**
    * 构建单个进度点
@@ -120,10 +121,13 @@ export struct PomodoroClockPage {
     .onClick(() => {
       if (this.phrase === Phrase.POMODORO) {
         this.phrase = Phrase.SHORT_BREAK
+        this.autoStart = false
       } else if (this.phrase === Phrase.SHORT_BREAK) {
         this.phrase = Phrase.LONG_BREAK
+        this.autoStart = false
       } else {
         this.phrase = Phrase.POMODORO
+        this.autoStart = false
       }
     })
   }
@@ -135,12 +139,61 @@ export struct PomodoroClockPage {
         pomodoroCount: this.settings.pomodoro,
         pomodoroSeconds: this.settings.pomodoroSeconds,
         initState: this.timerState,
-        autoStart: false,
-        onStateChanged: (state) => {
+        autoStart: this.autoStart,
+        onStarted: async (event) => {
+          if (event.type === "running") {
+            if (this.settings.showNotification) {
+              await this.liveViewController.startLiveView($r("app.string.setting_pomodoro"),
+                event.totalTimeMS - event.elapsedTimeMS, this.settings.colorTheme, false)
+            }
+          }
+        },
+        onPaused: async (event) => {
+          await this.liveViewController.pauseTimer()
+        },
+        onResumed: async (event) => {
+          await this.liveViewController.continueTimer()
+        },
+        onCancelled: async (event) => {
+          await this.liveViewController.stopLiveView()
+        },
+        onStateChanged: async (state) => {
           this.timerState = state
           if (state.type === 'finished') {
-            let resDir = this.getUIContext().getHostContext()!!.resourceDir
-            playSound(`file://${resDir}/glass.wav`)
+            playFinishedSound(this.getUIContext().getHostContext()!!)
+            let finished = this.settings.increaseTodayFinishedPomodoroCount()
+            this.finishedPomodoros = finished
+
+            if (finished >= this.settings.dailyGoal) {
+              this.timerState = { type: "stopped" }
+              this.pageInfos.pushPathByName(DAILY_GOAL_PAGE, null)
+            } else {
+              this.timerState = { type: "stopped" }
+              if (this.finishedPomodoros % this.settings.pomodorosUntilLongBreak == 0) {
+                // 开始长休
+                this.phrase = Phrase.LONG_BREAK
+                if (this.settings.autostartBreaks) {
+                  this.autoStart = true
+                } else {
+                  this.autoStart = false
+                }
+              } else if (this.finishedPomodoros % this.settings.break == 0) {
+                //开始短休
+                this.phrase = Phrase.SHORT_BREAK
+                if (this.settings.autostartBreaks) {
+                  this.autoStart = true
+                } else {
+                  this.autoStart = false
+                }
+              } else {
+                this.phrase = Phrase.POMODORO
+                if (this.settings.autostartPomodoros) {
+                  this.autoStart = true
+                } else {
+                  this.autoStart = false
+                }
+              }
+            }
           }
         },
       })
@@ -150,12 +203,20 @@ export struct PomodoroClockPage {
       PomodoroTimer({
         pomodoroCount: this.settings.break,
         pomodoroSeconds: this.settings.pomodoroSeconds,
-        autoStart: false,
+        autoStart: this.autoStart,
         initState: this.timerState,
-        onStateChanged: (state) => {
+        onStateChanged: async (state) => {
           this.timerState = state
           if (state.type === 'finished') {
             playFinishedSound(this.getUIContext().getHostContext()!!)
+
+            this.phrase = Phrase.POMODORO
+            this.timerState = { type: "stopped" }
+            if (this.settings.autostartPomodoros) {
+              this.autoStart = true
+            } else {
+              this.autoStart = false
+            }
           }
         },
       }).width('80%')
@@ -164,11 +225,21 @@ export struct PomodoroClockPage {
       PomodoroTimer({
         pomodoroCount: this.settings.longBreak,
         pomodoroSeconds: this.settings.pomodoroSeconds,
-        autoStart: false,
+        autoStart: this.autoStart,
         initState: this.timerState,
-        onStateChanged: (state) => {
+        onStateChanged: async (state) => {
           this.timerState = state
-          console.log(`${state.type}`)
+          if (state.type === 'finished') {
+            playFinishedSound(this.getUIContext().getHostContext()!!)
+
+            this.phrase = Phrase.POMODORO
+            this.timerState = { type: "stopped" }
+            if (this.settings.autostartPomodoros) {
+              this.autoStart = true
+            } else {
+              this.autoStart = false
+            }
+          }
         },
       }).width('80%')
         .margin({ bottom: 64 })

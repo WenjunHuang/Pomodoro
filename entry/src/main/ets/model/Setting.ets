@@ -1,5 +1,6 @@
 import { todayString } from '../utils/DateTimeUtils'
 import { ThemeColors } from './ThemeColors'
+import { PersistenceV2 } from '@kit.ArkUI'
 
 export enum SoundTheme {
   NOTIFICATION,
@@ -8,10 +9,10 @@ export enum SoundTheme {
 
 @ObservedV2
 export class Setting {
-  @Trace pomodoroSeconds: number = 60
-  @Trace pomodoro: number = 8
+  @Trace pomodoroSeconds: number = 10
+  @Trace pomodoro: number = 1
   @Trace break: number = 1
-  @Trace longBreak: number = 1
+  @Trace longBreak: number = 3
   @Trace colorTheme: string = ThemeColors.Coral
   @Trace soundThemes: SoundTheme = SoundTheme.NOTIFICATION
   @Trace pomodorosUntilLongBreak: number = 4
@@ -29,9 +30,11 @@ export class Setting {
     return count || 0
   }
 
-  increaseTodayFinishedPomodoroCount() {
+  increaseTodayFinishedPomodoroCount():number {
     let count = this.dailyFinished.get(todayString()) || 0
     count = count + 1
     this.dailyFinished.set(todayString(),count)
+    PersistenceV2.save(Setting)
+    return count
   }
 }

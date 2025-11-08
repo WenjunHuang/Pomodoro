@@ -35,6 +35,11 @@ export struct PomodoroTimer {
   @Require @Param pomodoroCount: number
   @Require @Param pomodoroSeconds: number
   @Event onStateChanged?: (state: TimerState) => void = undefined
+  @Event onStarted?: (state: TimerState) => void = undefined
+  @Event onPaused?: (state: TimerState) => void = undefined
+  @Event onResumed?: (state: TimerState) => void = undefined
+  @Event onCancelled?: (state: TimerState) => void = undefined
+  @Event onFinished?: (state: TimerState) => void = undefined
   @Param autoStart: boolean = false
   @Param initState: TimerState = { type: "stopped" }
   @Local isCircleBouncing: boolean = false
@@ -175,6 +180,20 @@ export struct PomodoroTimer {
 
     if (after.type !== 'transition') {
       this.onStateChanged && this.onStateChanged(after)
+    }
+
+    //调用事件通知
+    if (before.type === "transition" && before.from.type === "stopped" && after.type === "running") {
+      this.onStarted && this.onStarted(after)
+    } else if (before.type === "running" && after.type === "paused") {
+      this.onPaused && this.onPaused(after)
+    } else if (before.type === "paused" && after.type === "running") {
+      this.onResumed && this.onResumed(after)
+    } else if (before.type === "running" && after.type === "finished") {
+      this.onFinished && this.onFinished(after)
+    } else if (before.type === "transition" && (before.from.type === "running" || before.from.type === "paused") &&
+      after.type === "stopped") {
+      this.onCancelled && this.onCancelled(after)
     }
   }
 

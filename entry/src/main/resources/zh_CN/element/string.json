@@ -155,6 +155,18 @@
     {
       "name": "setting_rateus",
       "value": "评价"
+    },
+    {
+      "name": "daily_goal",
+      "value": "今日里程碑已达成！"
+    },
+    {
+      "name": "paused",
+      "value": "暂停"
+    },
+    {
+      "name": "running",
+      "value": "运行中"
     }
   ]
 }
