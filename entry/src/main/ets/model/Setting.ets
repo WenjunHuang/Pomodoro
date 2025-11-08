@@ -8,6 +8,7 @@ export enum SoundTheme {
 
 @ObservedV2
 export class Setting {
+  @Trace pomodoroSeconds: number = 60
   @Trace pomodoro: number = 8
   @Trace break: number = 1
   @Trace longBreak: number = 1

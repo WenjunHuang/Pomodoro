@@ -3,10 +3,31 @@ import { Setting } from '../model/Setting';
 import { ThemeColors } from '../model/ThemeColors';
 import { adjustHexColor, getDisabledColor, getMaskColor } from '../utils/ColorUtils';
 import { vibrator } from '@kit.SensorServiceKit';
+import { HOW_TO_PAGE } from './Pages';
+import { commentManager } from '@kit.AppGalleryKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { deviceInfo, BusinessError } from '@kit.BasicServicesKit';
+import type { common, Want } from '@kit.AbilityKit';
+import BuildProfile from 'BuildProfile';
 
 @Builder
 export function SettingPageBuilder() {
   SettingPage()
+}
+
+@Extend(Image)
+function labelIconStyle() {
+  .fillColor(Color.White)
+  .width(24)
+  .height(24)
+}
+
+@Extend(Image)
+function checkIconStyle() {
+  .width(48)
+  .height(48)
+  .aspectRatio(1)
+  .fillColor(Color.White)
 }
 
 @Extend(Text)
@@ -40,7 +61,7 @@ class NumCardParam {
 
 @ComponentV2
 export struct SettingPage {
-  @Local settings: Setting = PersistenceV2.connect( Setting,() => new Setting())!
+  @Local settings: Setting = PersistenceV2.connect(Setting, () => new Setting())!
   @Consumer('pageInfos') pageInfos: NavPathStack = new NavPathStack()
   private scroller: Scroller = new Scroller()
   // 颜色主题行数据
@@ -61,9 +82,7 @@ export struct SettingPage {
         Column() {
           Row() {
             Image($r("app.media.angle_left"))
-              .fillColor(Color.White)
-              .width(24)
-              .height(24)
+              .labelIconStyle()
               .onClick(() => this.pageInfos.pop())
           }
           .justifyContent(FlexAlign.Start)
@@ -148,7 +167,9 @@ export struct SettingPage {
                 )
               }
             })
-          }.width("100%")
+          }
+          .alignItems(VerticalAlign.Top)
+          .width("100%")
 
           Blank(12)
           this.switchCard({
@@ -215,6 +236,39 @@ export struct SettingPage {
               this.settings.keepPhoneAwake = false
             }
           })
+          Blank(12)
+          Row() {
+            Column() {
+              Image($r("app.media.question_mark"))
+                .checkIconStyle()
+                .margin({ bottom: 8 })
+              Text($r("app.string.setting_howto"))
+                .labelTextStyle()
+            }
+            .onClick(() => {
+              this.pageInfos.pushPathByName(HOW_TO_PAGE, null)
+            })
+            .padding({ top: 16, bottom: 16 })
+            .backgroundColor(this.labelBackground())
+            .animation({ duration: 200, curve: Curve.Ease })
+            .layoutWeight(1)
+
+            Blank(8)
+            Column() {
+              Image($r("app.media.rate"))
+                .checkIconStyle()
+                .margin({ bottom: 8 })
+              Text($r("app.string.setting_rate_us"))
+                .labelTextStyle()
+            }
+            .padding({ top: 16, bottom: 16 })
+            .backgroundColor(this.labelBackground())
+            .animation({ duration: 200, curve: Curve.Ease })
+            .layoutWeight(1)
+            .onClick(() => {
+              showCommentDialog(this.getUIContext().getHostContext()! as common.UIAbilityContext)
+            })
+          }
 
         }.width('100%')
         .padding(16)
@@ -236,9 +290,7 @@ export struct SettingPage {
     Column() {
       Row() {
         Image($r("app.media.check"))
-          .width(48)
-          .height(48)
-          .aspectRatio(1)
+          .checkIconStyle()
           .fillColor(param.isSwitchOnSelected ? Color.White : getDisabledColor("#FFFFFF"))
           .enabled(!param.isSwitchOnSelected)
           .onClick(async () => {
@@ -247,9 +299,7 @@ export struct SettingPage {
           .animation({ duration: 100, curve: Curve.Ease })
           .margin({ right: 16 })
         Image($r("app.media.cross"))
-          .width(48)
-          .height(48)
-          .aspectRatio(1)
+          .checkIconStyle()
           .fillColor(param.isSwitchOffSelected ? Color.White : getDisabledColor("#FFFFFF"))
           .enabled(!param.isSwitchOffSelected)
           .onClick(() => {
@@ -302,9 +352,8 @@ export struct SettingPage {
               .height("100%")
               .fill(color)
             if (this.settings.colorTheme === color) {
-              Image($r('app.media.check')).fillColor(Color.White)
-                .width(48)
-                .height(48)
+              Image($r('app.media.check'))
+                .checkIconStyle()
                 .transition(TransitionEffect.OPACITY.animation({ duration: 200, curve: Curve.Ease }))
             }
           }
@@ -358,8 +407,7 @@ function numberSetting(param: NumberSettingParam) {
     Row() {
       Image($r("app.media.minus"))
         .fillColor(Color.White)
-        .width(48)
-        .height(48)
+        .checkIconStyle()
         .margin({ right: 24 })
         .onClick((e) => {
           if (param.count > 1) {
@@ -372,8 +420,7 @@ function numberSetting(param: NumberSettingParam) {
         .fontWeight(FontWeight.Bold)
       Image($r("app.media.plus"))
         .fillColor(Color.White)
-        .width(48)
-        .height(48)
+        .checkIconStyle()
         .margin({ left: 24 })
         .onClick(() => {
           PromptActionClass.updateDialog(param.setCount(param.count + 1))
@@ -383,12 +430,32 @@ function numberSetting(param: NumberSettingParam) {
 
     Image($r("app.media.check"))
       .fillColor(Color.White)
-      .width(48)
-      .height(48)
+      .checkIconStyle()
       .onClick(() => {
         PromptActionClass.closeDialog(param.count)
       })
   }.justifyContent(FlexAlign.Center)
+}
+
+function showCommentDialog(uiContext: common.UIAbilityContext) {
+  if (deviceInfo.sdkApiVersion >= 20) {
+    try {
+      commentManager.showCommentDialog(uiContext).then(() => {
+        hilog.info(0, 'TAG', "succeeded in showing commentDialog.");
+      }).catch((error: BusinessError<Object>) => {
+        hilog.error(0, 'TAG', `showCommentDialog failed, Code: ${error.code}, message: ${error.message}`);
+      });
+    } catch (error) {
+      hilog.error(0, 'TAG', `showCommentDialog failed, Code: ${error.code}, message: ${error.message}`);
+    }
+  } else {
+    const want: Want = {
+      uri: `store://appgallery.huawei.com/app/detail?id=C6917588948282242128`
+    };
+    uiContext.startAbility(want).catch((error: BusinessError<Object>) => {
+      hilog.error(0, 'TAG', `showCommentDialog failed, Code: ${error.code}, message: ${error.message}`);
+    })
+  }
 }
 
 class PromptActionClass {

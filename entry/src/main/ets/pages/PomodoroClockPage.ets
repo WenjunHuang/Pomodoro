@@ -133,7 +133,7 @@ export struct PomodoroClockPage {
     if (this.phrase === Phrase.POMODORO) {
       PomodoroTimer({
         pomodoroCount: this.settings.pomodoro,
-        pomodoroSeconds: 60,
+        pomodoroSeconds: this.settings.pomodoroSeconds,
         initState: this.timerState,
         autoStart: false,
         onStateChanged: (state) => {
@@ -149,7 +149,7 @@ export struct PomodoroClockPage {
     } else if (this.phrase === Phrase.SHORT_BREAK) {
       PomodoroTimer({
         pomodoroCount: this.settings.break,
-        pomodoroSeconds: 60,
+        pomodoroSeconds: this.settings.pomodoroSeconds,
         autoStart: false,
         initState: this.timerState,
         onStateChanged: (state) => {
@@ -163,7 +163,7 @@ export struct PomodoroClockPage {
     } else {
       PomodoroTimer({
         pomodoroCount: this.settings.longBreak,
-        pomodoroSeconds: 60,
+        pomodoroSeconds: this.settings.pomodoroSeconds,
         autoStart: false,
         initState: this.timerState,
         onStateChanged: (state) => {
