@@ -69,8 +69,8 @@
       "value": "自动开始番茄钟"
     },
     {
-      "name": "setting_show_notification",
-      "value": "显示通知"
+      "name": "setting_show_liveview",
+      "value": "显示实况窗"
     },
     {
       "name": "setting_keep_phone_awake",

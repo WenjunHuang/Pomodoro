@@ -142,9 +142,17 @@ export struct PomodoroClockPage {
         autoStart: this.autoStart,
         onStarted: async (event) => {
           if (event.type === "running") {
-            if (this.settings.showNotification) {
+            if (this.settings.showLiveView) {
               await this.liveViewController.startLiveView($r("app.string.setting_pomodoro"),
-                event.totalTimeMS - event.elapsedTimeMS, this.settings.colorTheme, false)
+                event.totalTimeMS - event.elapsedTimeMS, this.settings.colorTheme, true)
+            }
+          }
+        },
+        onRunning: async (event) => {
+          if (event.type === "running") {
+            if (this.settings.showLiveView) {
+              await this.liveViewController.updateTimer($r("app.string.setting_pomodoro"),
+                event.totalTimeMS - event.elapsedTimeMS, true)
             }
           }
         },
@@ -161,6 +169,8 @@ export struct PomodoroClockPage {
           this.timerState = state
           if (state.type === 'finished') {
             playFinishedSound(this.getUIContext().getHostContext()!!)
+            await this.liveViewController.stopLiveView()
+
             let finished = this.settings.increaseTodayFinishedPomodoroCount()
             this.finishedPomodoros = finished
 
@@ -205,10 +215,36 @@ export struct PomodoroClockPage {
         pomodoroSeconds: this.settings.pomodoroSeconds,
         autoStart: this.autoStart,
         initState: this.timerState,
+        onStarted: async (event) => {
+          if (event.type === "running") {
+            if (this.settings.showLiveView) {
+              await this.liveViewController.startLiveView($r("app.string.setting_break"),
+                event.totalTimeMS - event.elapsedTimeMS, this.settings.colorTheme, true)
+            }
+          }
+        },
+        onRunning: async (event) => {
+          if (event.type === "running") {
+            if (this.settings.showLiveView) {
+              await this.liveViewController.updateTimer($r("app.string.setting_break"),
+                event.totalTimeMS - event.elapsedTimeMS, true)
+            }
+          }
+        },
+        onPaused: async (event) => {
+          await this.liveViewController.pauseTimer()
+        },
+        onResumed: async (event) => {
+          await this.liveViewController.continueTimer()
+        },
+        onCancelled: async (event) => {
+          await this.liveViewController.stopLiveView()
+        },
         onStateChanged: async (state) => {
           this.timerState = state
           if (state.type === 'finished') {
             playFinishedSound(this.getUIContext().getHostContext()!!)
+            await this.liveViewController.stopLiveView()
 
             this.phrase = Phrase.POMODORO
             this.timerState = { type: "stopped" }
@@ -227,10 +263,36 @@ export struct PomodoroClockPage {
         pomodoroSeconds: this.settings.pomodoroSeconds,
         autoStart: this.autoStart,
         initState: this.timerState,
+        onStarted: async (event) => {
+          if (event.type === "running") {
+            if (this.settings.showLiveView) {
+              await this.liveViewController.startLiveView($r("app.string.setting_long_break"),
+                event.totalTimeMS - event.elapsedTimeMS, this.settings.colorTheme, true)
+            }
+          }
+        },
+        onRunning: async (event) => {
+          if (event.type === "running") {
+            if (this.settings.showLiveView) {
+              await this.liveViewController.updateTimer($r("app.string.setting_long_break"),
+                event.totalTimeMS - event.elapsedTimeMS, true)
+            }
+          }
+        },
+        onPaused: async (event) => {
+          await this.liveViewController.pauseTimer()
+        },
+        onResumed: async (event) => {
+          await this.liveViewController.continueTimer()
+        },
+        onCancelled: async (event) => {
+          await this.liveViewController.stopLiveView()
+        },
         onStateChanged: async (state) => {
           this.timerState = state
           if (state.type === 'finished') {
             playFinishedSound(this.getUIContext().getHostContext()!!)
+            await this.liveViewController.stopLiveView()
 
             this.phrase = Phrase.POMODORO
             this.timerState = { type: "stopped" }

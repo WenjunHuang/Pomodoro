@@ -214,14 +214,14 @@ export struct SettingPage {
           })
           Blank(12)
           this.switchCard({
-            label: $r("app.string.setting_show_notification"),
-            isSwitchOnSelected: this.settings.showNotification,
-            isSwitchOffSelected: !this.settings.showNotification,
+            label: $r("app.string.setting_show_liveview"),
+            isSwitchOnSelected: this.settings.showLiveView,
+            isSwitchOffSelected: !this.settings.showLiveView,
             onSwitchOn: () => {
-              this.settings.showNotification = true
+              this.settings.showLiveView = true
             },
             onSwitchOff: () => {
-              this.settings.showNotification = false
+              this.settings.showLiveView = false
             }
           })
           Blank(12)

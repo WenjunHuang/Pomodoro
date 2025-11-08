@@ -40,6 +40,7 @@ export struct PomodoroTimer {
   @Event onResumed?: (state: TimerState) => void = undefined
   @Event onCancelled?: (state: TimerState) => void = undefined
   @Event onFinished?: (state: TimerState) => void = undefined
+  @Event onRunning?: (state: TimerState) => void = undefined
   @Param autoStart: boolean = false
   @Param initState: TimerState = { type: "stopped" }
   @Local isCircleBouncing: boolean = false
@@ -99,6 +100,11 @@ export struct PomodoroTimer {
       }
       this.state.elapsedTimeMS += PomodoroTimer.TICK_MS
       this.onStateChanged && this.onStateChanged({
+        type: "running",
+        elapsedTimeMS: this.state.elapsedTimeMS,
+        totalTimeMS: this.state.totalTimeMS
+      })
+      this.onRunning && this.onRunning({
         type: "running",
         elapsedTimeMS: this.state.elapsedTimeMS,
         totalTimeMS: this.state.totalTimeMS

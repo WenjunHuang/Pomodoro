@@ -60,6 +60,7 @@ export class LiveViewController {
       LiveViewController.defaultView.liveViewData.capsule = {
         type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
         status: 1,
+        time: time,
         isPaused: paused,
       }
       LiveViewController.defaultView.liveViewData.primary.layoutData = {
@@ -90,16 +91,16 @@ export class LiveViewController {
         return;
       }
       //update liveView parameters
-      LiveViewController.defaultView.timer = {
-        isPaused: true
-      }
+      // LiveViewController.defaultView.timer = {
+      //   isPaused: true
+      // }
       LiveViewController.defaultView.liveViewData.primary.content =
         [{ text: await this.getString($r("app.string.paused")) }]
-      LiveViewController.defaultView.liveViewData.capsule = {
-        type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
-        status: 1,
-        isPaused: true,
-      }
+      // LiveViewController.defaultView.liveViewData.capsule = {
+      //   type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
+      //   status: 1,
+      //   isPaused: true,
+      // }
       if (LiveViewController.defaultView.sequence) {
         LiveViewController.defaultView.sequence += 1;
       }
@@ -119,15 +120,16 @@ export class LiveViewController {
         return;
       }
       //update liveView parameters
-      LiveViewController.defaultView.timer = {
-        isPaused: false
-      }
-      LiveViewController.defaultView.liveViewData.primary.title = '计时中'
-      LiveViewController.defaultView.liveViewData.capsule = {
-        type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
-        status: 1,
-        isPaused: false,
-      }
+      // LiveViewController.defaultView.timer = {
+      //   isPaused: false
+      // }
+      LiveViewController.defaultView.liveViewData.primary.content =
+        [{ text: await this.getString($r("app.string.running")) }]
+      // LiveViewController.defaultView.liveViewData.capsule = {
+      //   type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
+      //   status: 1,
+      //   isPaused: false,
+      // }
       if (LiveViewController.defaultView.sequence) {
         LiveViewController.defaultView.sequence += 1;
       }
@@ -151,18 +153,18 @@ export class LiveViewController {
       if (LiveViewController.defaultView.sequence) {
         LiveViewController.defaultView.sequence += 1;
       }
-      LiveViewController.defaultView.liveViewData.primary.title = '已结束'
-      LiveViewController.defaultView.liveViewData.primary.layoutData = {
-        layoutType: liveViewManager.LayoutType.LAYOUT_TYPE_PICKUP,
-        underlineColor: LiveViewController.pickUpColor,
-      };
-      LiveViewController.defaultView.timer = {
-        isPaused: true
-      };
-      LiveViewController.defaultView.liveViewData.capsule = {
-        type: liveViewManager.CapsuleType.CAPSULE_TYPE_TEXT,
-        status: 1
-      }
+      // LiveViewController.defaultView.liveViewData.primary.title = '已结束'
+      // LiveViewController.defaultView.liveViewData.primary.layoutData = {
+      //   layoutType: liveViewManager.LayoutType.LAYOUT_TYPE_PICKUP,
+      //   underlineColor: LiveViewController.pickUpColor,
+      // };
+      // LiveViewController.defaultView.timer = {
+      //   isPaused: true
+      // };
+      // LiveViewController.defaultView.liveViewData.capsule = {
+      //   type: liveViewManager.CapsuleType.CAPSULE_TYPE_TEXT,
+      //   status: 1
+      // }
       //destroy the liveView
       Logger.info('Request stopLiveView req: %{public}s', JSON.stringify(LiveViewController.defaultView));
       const result = await liveViewManager.stopLiveView(LiveViewController.defaultView);
@@ -213,11 +215,7 @@ export class LiveViewController {
               content: '${placeholder.timer}',
               descPic: "timer.png"
             },
-            content: [
-              {
-                text: await this.getString($r("app.string.running"))
-              }
-            ],
+            content: [{ text: await this.getString($r("app.string.running")) }],
             extensionData: {
               //expansion Zone
               type: liveViewManager.ExtensionType.EXTENSION_TYPE_DEFAULT,
@@ -227,7 +225,7 @@ export class LiveViewController {
             //capsule
             type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
             status: 1,
-            icon: 'pomodoro.svg',
+            icon: 'foreground.png',
             backgroundColor: LiveViewController.capsuleColor,
             time: time,
             isCountdown: true,

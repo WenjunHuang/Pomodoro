@@ -69,8 +69,8 @@
       "value": "AUTOSTART POMODOROS"
     },
     {
-      "name": "setting_show_notification",
-      "value": "SHOW NOTIFICATION"
+      "name": "setting_show_liveview",
+      "value": "SHOW LIVE VIEW"
     },
     {
       "name": "setting_keep_phone_awake",

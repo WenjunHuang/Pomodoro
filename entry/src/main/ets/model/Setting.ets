@@ -20,7 +20,7 @@ export class Setting {
   @Trace vibrate: boolean = true
   @Trace autostartBreaks: boolean = true
   @Trace autostartPomodoros: boolean = true
-  @Trace showNotification: boolean = true
+  @Trace showLiveView: boolean = true
   @Trace keepPhoneAwake: boolean = true
   @Trace firstStartApp: boolean = true
   @Trace dailyFinished: Map<string, number> = new Map()
