@@ -8,7 +8,7 @@
     },
     "sourceOption": {
       "workers": [
-        './src/main/ets/workers/PomodoroWorker.ets'
+        "./src/main/ets/workers/TimerWorker.ets"
       ]
     }
   },

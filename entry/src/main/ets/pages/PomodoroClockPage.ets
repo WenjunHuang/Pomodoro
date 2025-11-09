@@ -1,18 +1,14 @@
-import { PomodoroTimer, TimerState } from '../components/PomodoroTimer'
-import { Setting } from '../model/Setting'
+import { PomodoroTimer } from '../components/PomodoroTimer'
+import { makePlainSettingFrom, Setting, todayFinishedPomodoroCount } from '../model/Setting'
 import { PersistenceV2 } from '@kit.ArkUI'
 import { getDisabledColor } from '../utils/ColorUtils'
 import { padNumber, remainingMinutes, remainingSecondsWithoutMinutes } from '../utils/DateTimeUtils'
-import { playFinishedSound } from '../utils/SoundUtils'
-import { DAILY_GOAL_PAGE } from './Pages'
-import { LiveViewController } from '../utils/LiveViewUtils'
-import { common } from '@kit.AbilityKit'
+import { Phrase, TimerState } from '../model/Pomodoro'
+import { worker } from '@kit.ArkTS'
+import { WorkerEvent } from '../workers/TimerWorker'
+import { postCommandToWorker } from '../utils/WorkerUtils'
+import { Logger } from '../utils/LogUtil'
 
-enum Phrase {
-  POMODORO,
-  SHORT_BREAK,
-  LONG_BREAK
-}
 
 @Builder
 export function PomodoroClockPageBuilder() {
@@ -23,10 +19,13 @@ export function PomodoroClockPageBuilder() {
 export struct PomodoroClockPage {
   @Local settings: Setting = PersistenceV2.connect(Setting, () => new Setting())!
   @Consumer('pageInfos') pageInfos: NavPathStack = new NavPathStack()
+  // @Consumer('timerWorker') timerWorker: worker.ThreadWorker =
+  //   new worker.ThreadWorker("entry/ets/workers/TimerWorker.ets")
   @Local finishedPomodoros: number = 0
   @Local phrase: Phrase = Phrase.POMODORO
   @Local autoStart: boolean = false
   @Local timerState: TimerState = { type: "stopped" }
+  private timerWorker: worker.ThreadWorker | undefined = undefined
 
   /**
    * 构建单个进度点
@@ -35,10 +34,10 @@ export struct PomodoroClockPage {
   @Builder
   private buildProgressDot(index: number) {
     Circle()
-      .width(this.settings.todayFinishedPomodoroCount() >= (index + 1) ? 4 : 2)
+      .width(todayFinishedPomodoroCount(this.settings) >= (index + 1) ? 4 : 2)
       .aspectRatio(1)
       .flexShrink(1)
-      .fill(this.settings.todayFinishedPomodoroCount() >= (index + 1) ? Color.White : getDisabledColor("#FFFFFF"))
+      .fill(todayFinishedPomodoroCount(this.settings) >= (index + 1) ? Color.White : getDisabledColor("#FFFFFF"))
   }
 
   /**
@@ -131,180 +130,51 @@ export struct PomodoroClockPage {
     })
   }
 
+  private pomodoroCountOfPhrase() {
+    if (this.phrase === Phrase.POMODORO) {
+      return this.settings.pomodoro
+    } else if (this.phrase === Phrase.SHORT_BREAK) {
+      return this.settings.break
+    } else {
+      return this.settings.longBreak
+    }
+  }
+
   @Builder
   buildTimer() {
-    if (this.phrase === Phrase.POMODORO) {
-      PomodoroTimer({
-        pomodoroCount: this.settings.pomodoro,
-        pomodoroSeconds: this.settings.pomodoroSeconds,
-        initState: this.timerState,
-        autoStart: this.autoStart,
-        onStarted: async (event) => {
-          if (event.type === "running") {
-            if (this.settings.showLiveView) {
-              await LiveViewController.startOrUpdateLiveView($r("app.string.setting_pomodoro"),
-                event.totalTimeMS - event.elapsedTimeMS, "working.svg", false)
+    PomodoroTimer({
+      phrase: this.phrase,
+      pomodoroCount: this.pomodoroCountOfPhrase(),
+      pomodoroSeconds: this.settings.pomodoroSeconds,
+      state: this.timerState,
+      onTap: () => {
+        if (this.timerState.type === "stopped") {
+          try {
+            let timerWorker: worker.ThreadWorker = new worker.ThreadWorker("entry/ets/workers/TimerWorker.ets")
+            timerWorker.onmessage = (event) => {
+              let workerEvent = event.data as WorkerEvent
+              this.timerState = workerEvent.state
             }
+            let plain = makePlainSettingFrom(this.settings)
+            Logger.info(JSON.stringify(plain))
+            postCommandToWorker(timerWorker, { type: "start", phrase: this.phrase, setting: plain })
+            this.timerWorker = timerWorker
+          } catch (error) {
+            Logger.error("Error PostMessage:%{public}s", JSON.stringify(error))
           }
-        },
-        onRunning: async (event) => {
-          if (event.type === "running") {
-            if (this.settings.showLiveView) {
-              await LiveViewController.startOrUpdateLiveView($r("app.string.setting_pomodoro"),
-                event.totalTimeMS - event.elapsedTimeMS, "working.svg", false)
-            }
-          }
-        },
-        onPaused: async (event) => {
-          await LiveViewController.pauseTimer()
-        },
-        onResumed: async (event) => {
-          await LiveViewController.continueTimer()
-        },
-        onCancelled: () => {
-          LiveViewController.resetLastUpdatedTime()
-        },
-        onStateChanged: async (state) => {
-          this.timerState = state
-          if (state.type === 'finished') {
-            playFinishedSound(this.getUIContext().getHostContext()!!)
-            LiveViewController.resetLastUpdatedTime()
-
-            let finished = this.settings.increaseTodayFinishedPomodoroCount()
-            this.finishedPomodoros = finished
-
-            if (finished >= this.settings.dailyGoal) {
-              this.timerState = { type: "stopped" }
-              this.pageInfos.pushPathByName(DAILY_GOAL_PAGE, null)
-            } else {
-              this.timerState = { type: "stopped" }
-              if (this.finishedPomodoros % this.settings.pomodorosUntilLongBreak == 0) {
-                // 开始长休
-                this.phrase = Phrase.LONG_BREAK
-                if (this.settings.autostartBreaks) {
-                  this.autoStart = true
-                } else {
-                  this.autoStart = false
-                }
-              } else if (this.finishedPomodoros % this.settings.break == 0) {
-                //开始短休
-                this.phrase = Phrase.SHORT_BREAK
-                if (this.settings.autostartBreaks) {
-                  this.autoStart = true
-                } else {
-                  this.autoStart = false
-                }
-              } else {
-                this.phrase = Phrase.POMODORO
-                if (this.settings.autostartPomodoros) {
-                  this.autoStart = true
-                } else {
-                  this.autoStart = false
-                }
-              }
-            }
-          }
-        },
-      })
-        .width('80%')
-        .margin({ bottom: 64 })
-    } else if (this.phrase === Phrase.SHORT_BREAK) {
-      PomodoroTimer({
-        pomodoroCount: this.settings.break,
-        pomodoroSeconds: this.settings.pomodoroSeconds,
-        autoStart: this.autoStart,
-        initState: this.timerState,
-        onStarted: async (event) => {
-          if (event.type === "running") {
-            if (this.settings.showLiveView) {
-              await LiveViewController.startOrUpdateLiveView($r("app.string.setting_break"),
-                event.totalTimeMS - event.elapsedTimeMS, "break.svg", false)
-            }
-          }
-        },
-        onRunning: async (event) => {
-          if (event.type === "running") {
-            if (this.settings.showLiveView) {
-              await LiveViewController.startOrUpdateLiveView($r("app.string.setting_break"),
-                event.totalTimeMS - event.elapsedTimeMS, "break.svg", false)
-            }
-          }
-        },
-        onPaused: async (event) => {
-          await LiveViewController.pauseTimer()
-        },
-        onResumed: async (event) => {
-          await LiveViewController.continueTimer()
-        },
-        onCancelled: () => {
-          LiveViewController.resetLastUpdatedTime()
-        },
-        onStateChanged: async (state) => {
-          this.timerState = state
-          if (state.type === 'finished') {
-            playFinishedSound(this.getUIContext().getHostContext()!!)
-            LiveViewController.resetLastUpdatedTime()
-
-            this.phrase = Phrase.POMODORO
-            this.timerState = { type: "stopped" }
-            if (this.settings.autostartPomodoros) {
-              this.autoStart = true
-            } else {
-              this.autoStart = false
-            }
-          }
-        },
-      }).width('80%')
-        .margin({ bottom: 64 })
-    } else {
-      PomodoroTimer({
-        pomodoroCount: this.settings.longBreak,
-        pomodoroSeconds: this.settings.pomodoroSeconds,
-        autoStart: this.autoStart,
-        initState: this.timerState,
-        onStarted: async (event) => {
-          if (event.type === "running") {
-            if (this.settings.showLiveView) {
-              await LiveViewController.startOrUpdateLiveView($r("app.string.setting_long_break"),
-                event.totalTimeMS - event.elapsedTimeMS, "break.svg", false)
-            }
-          }
-        },
-        onCancelled: () => {
-          LiveViewController.resetLastUpdatedTime()
-        },
-        onRunning: async (event) => {
-          if (event.type === "running") {
-            if (this.settings.showLiveView) {
-              await LiveViewController.startOrUpdateLiveView($r("app.string.setting_long_break"),
-                event.totalTimeMS - event.elapsedTimeMS, "break.svg", false)
-            }
-          }
-        },
-        onPaused: async (event) => {
-          await LiveViewController.pauseTimer()
-        },
-        onResumed: async (event) => {
-          await LiveViewController.continueTimer()
-        },
-        onStateChanged: async (state) => {
-          this.timerState = state
-          if (state.type === 'finished') {
-            playFinishedSound(this.getUIContext().getHostContext()!!)
-            LiveViewController.resetLastUpdatedTime()
-
-            this.phrase = Phrase.POMODORO
-            this.timerState = { type: "stopped" }
-            if (this.settings.autostartPomodoros) {
-              this.autoStart = true
-            } else {
-              this.autoStart = false
-            }
-          }
-        },
-      }).width('80%')
-        .margin({ bottom: 64 })
-    }
+        } else if (this.timerState.type === "running") {
+          this.timerWorker && postCommandToWorker(this.timerWorker, { type: "pause" })
+        } else if (this.timerState.type === "paused") {
+          this.timerWorker && postCommandToWorker(this.timerWorker, { type: "resume" })
+        }
+      },
+      onLongTap: () => {
+        if (this.timerState.type === "running" || this.timerState.type === "paused") {
+          this.timerWorker && postCommandToWorker(this.timerWorker, { type: "cancel" })
+        }
+      }
+    }).width('80%')
+      .margin({ bottom: 64 })
   }
 
   build() {
@@ -329,6 +199,7 @@ export struct PomodoroClockPage {
 
         // 番茄钟计时器
         this.buildTimer()
+
 
         // 进度显示区域
         Row() {
