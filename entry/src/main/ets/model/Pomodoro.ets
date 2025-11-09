@@ -1,3 +1,9 @@
+export interface PreRun {
+  type: "prerun";
+  elapsedTimeMS: number;
+  totalTimeMS: number;
+}
+
 export interface Running {
   type: 'running';
   elapsedTimeMS: number;
@@ -8,6 +14,10 @@ export interface Paused {
   type: 'paused';
   elapsedTimeMS: number;
   totalTimeMS: number;
+}
+
+export interface PreStop {
+  type: "prestop"
 }
 
 export interface Stopped {
@@ -24,13 +34,14 @@ export interface Transition {
   to: TimerState;
 }
 
-export type TimerState = Running | Paused | Stopped | Finished | Transition
+export type TimerState = PreRun | Running | Paused | PreStop | Stopped | Finished | Transition
 
 export enum Phrase {
   POMODORO,
   SHORT_BREAK,
   LONG_BREAK
 }
+
 export const FPS: number = 90
 
 export const TICK_MS: number = 1000 / FPS // fps: 90

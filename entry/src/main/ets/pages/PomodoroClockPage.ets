@@ -1,5 +1,11 @@
 import { PomodoroTimer } from '../components/PomodoroTimer'
-import { makePlainSettingFrom, Setting, todayFinishedPomodoroCount } from '../model/Setting'
+import {
+  getPhraseTotalMS,
+  increaseTodayFinishedPomodoroCount,
+  makePlainSettingFrom,
+  Setting,
+  todayFinishedPomodoroCount
+} from '../model/Setting'
 import { PersistenceV2 } from '@kit.ArkUI'
 import { getDisabledColor } from '../utils/ColorUtils'
 import { padNumber, remainingMinutes, remainingSecondsWithoutMinutes } from '../utils/DateTimeUtils'
@@ -140,6 +146,15 @@ export struct PomodoroClockPage {
     }
   }
 
+  private getTimerWorker(): worker.ThreadWorker {
+    if (this.timerWorker) {
+      return this.timerWorker
+    }
+    let timerWorker: worker.ThreadWorker = new worker.ThreadWorker("entry/ets/workers/TimerWorker.ets")
+    this.timerWorker = timerWorker
+    return timerWorker
+  }
+
   @Builder
   buildTimer() {
     PomodoroTimer({
@@ -147,21 +162,63 @@ export struct PomodoroClockPage {
       pomodoroCount: this.pomodoroCountOfPhrase(),
       pomodoroSeconds: this.settings.pomodoroSeconds,
       state: this.timerState,
+      onReadyToRun: () => {
+        try {
+          let timerWorker = this.getTimerWorker()
+          timerWorker.onmessage = (event) => {
+            let workerEvent = event.data as WorkerEvent
+            if (workerEvent.event == "onCancelled") {
+              this.timerState = { type: "prestop" }
+            } else {
+              if (workerEvent.event == "onFinished") {
+                if (workerEvent.phrase === Phrase.POMODORO) {
+                  let finished = increaseTodayFinishedPomodoroCount(this.settings)
+                  if (finished % this.settings.pomodorosUntilLongBreak === 0) {
+                    this.phrase = Phrase.LONG_BREAK
+                    if (this.settings.autostartBreaks) {
+                      postCommandToWorker(timerWorker,
+                        { type: "start", phrase: Phrase.LONG_BREAK, setting: makePlainSettingFrom(this.settings) })
+                    } else {
+                      this.timerState = { type: "stopped" }
+                    }
+                  } else {
+                    this.phrase = Phrase.SHORT_BREAK
+                    if (this.settings.autostartBreaks) {
+                      postCommandToWorker(timerWorker,
+                        { type: "start", phrase: Phrase.SHORT_BREAK, setting: makePlainSettingFrom(this.settings) })
+                    } else {
+                      this.timerState = { type: "stopped" }
+                    }
+                  }
+                } else {
+                  this.phrase = Phrase.POMODORO
+                  if (this.settings.autostartPomodoros) {
+                    postCommandToWorker(timerWorker,
+                      { type: "start", phrase: Phrase.POMODORO, setting: makePlainSettingFrom(this.settings) })
+                  } else {
+                    this.timerState = { type: "stopped" }
+                  }
+                }
+              } else {
+                this.phrase = workerEvent.phrase
+                this.timerState = workerEvent.state
+              }
+            }
+          }
+
+          let plain = makePlainSettingFrom(this.settings)
+          postCommandToWorker(timerWorker, { type: "start", phrase: this.phrase, setting: plain })
+        } catch (error) {
+          Logger.error("Error PostMessage:%{public}s", JSON.stringify(error))
+        }
+      },
+      onReadyToStop: () => {
+        this.timerState = { type: "stopped" }
+      },
       onTap: () => {
         if (this.timerState.type === "stopped") {
-          try {
-            let timerWorker: worker.ThreadWorker = new worker.ThreadWorker("entry/ets/workers/TimerWorker.ets")
-            timerWorker.onmessage = (event) => {
-              let workerEvent = event.data as WorkerEvent
-              this.timerState = workerEvent.state
-            }
-            let plain = makePlainSettingFrom(this.settings)
-            Logger.info(JSON.stringify(plain))
-            postCommandToWorker(timerWorker, { type: "start", phrase: this.phrase, setting: plain })
-            this.timerWorker = timerWorker
-          } catch (error) {
-            Logger.error("Error PostMessage:%{public}s", JSON.stringify(error))
-          }
+          this.timerState =
+            { type: "prerun", elapsedTimeMS: 0, totalTimeMS: getPhraseTotalMS(this.settings, this.phrase) }
         } else if (this.timerState.type === "running") {
           this.timerWorker && postCommandToWorker(this.timerWorker, { type: "pause" })
         } else if (this.timerState.type === "paused") {
@@ -200,7 +257,6 @@ export struct PomodoroClockPage {
         // 番茄钟计时器
         this.buildTimer()
 
-
         // 进度显示区域
         Row() {
           ForEach(Array.from({ length: Math.ceil(this.settings.dailyGoal / 3) }), (_: number, slot) => {
@@ -237,7 +293,7 @@ export struct PomodoroClockPage {
           Text($r("app.string.reset"))
             .phraseTextStyle()
             .onClick(() => {
-              this.timerState = { type: "transition", from: this.timerState, to: { type: "stopped" } }
+              this.timerWorker && postCommandToWorker(this.timerWorker, { type: "cancel" })
             })
         }
       }

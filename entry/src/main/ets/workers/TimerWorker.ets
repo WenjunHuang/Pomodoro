@@ -1,6 +1,6 @@
 import { ErrorEvent, MessageEvents, ThreadWorkerGlobalScope, worker } from '@kit.ArkTS';
 import { TICK_MS, TimerState, Phrase } from '../model/Pomodoro';
-import { Setting } from '../model/Setting';
+import { getPhraseTotalMS, Setting } from '../model/Setting';
 import { Logger } from '../utils/LogUtil';
 
 const workerPort: ThreadWorkerGlobalScope = worker.workerPort;
@@ -57,7 +57,6 @@ function startTicking() {
     if (timerState.elapsedTimeMS >= timerState.totalTimeMS) {
       timerState = { type: 'finished' }
       clearTimer()
-
       let event: WorkerEvent = { event: "onFinished", phrase: phrase!, state: timerState }
       postEvent(event)
     } else {
@@ -82,7 +81,6 @@ function postEvent(event: WorkerEvent) {
 }
 
 
-
 /**
  * Defines the event handler to be called when the worker thread receives a message sent by the host thread.
  * The event handler is executed in the worker thread.
@@ -95,17 +93,7 @@ workerPort.onmessage = (event: MessageEvents) => {
     phrase = command.phrase
     setting = command.setting
 
-    let totalTimeMS = 0
-    switch (phrase) {
-      case Phrase.POMODORO:
-        totalTimeMS = setting.pomodoroSeconds * setting.pomodoro * 1000
-        break;
-      case Phrase.SHORT_BREAK:
-        totalTimeMS = setting.pomodoroSeconds * setting.break * 1000
-        break
-      case Phrase.LONG_BREAK:
-        totalTimeMS = setting.pomodoroSeconds * setting.longBreak * 1000
-    }
+    let totalTimeMS = getPhraseTotalMS(setting, phrase!)
 
     timerState = { type: "running", elapsedTimeMS: 0, totalTimeMS: totalTimeMS }
     let event: WorkerEvent = {

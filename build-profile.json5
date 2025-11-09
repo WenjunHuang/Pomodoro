@@ -1,6 +1,20 @@
 {
   "app": {
-    "signingConfigs": [],
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "/Users/rick/.ohos/config/default_Pomodoro_ox8JydWrFiBd1MK-QZWrlavfDcbT3bOz2ji5MbFOpXM=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001B7A156F2AA019E12B10FBEE4CF1D3C6702D738242B906A7C106EC5C261D1C9A31556EB961E5F4C1",
+          "profile": "/Users/rick/.ohos/config/default_Pomodoro_ox8JydWrFiBd1MK-QZWrlavfDcbT3bOz2ji5MbFOpXM=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "/Users/rick/.ohos/config/default_Pomodoro_ox8JydWrFiBd1MK-QZWrlavfDcbT3bOz2ji5MbFOpXM=.p12",
+          "storePassword": "0000001B642E7384475F16DF0575E26C1747E9EA0CA9BDA947AAB1897BC47C28AD69DAF3F21C24AB5DF6D3"
+        }
+      }
+    ],
     "products": [
       {
         "name": "default",

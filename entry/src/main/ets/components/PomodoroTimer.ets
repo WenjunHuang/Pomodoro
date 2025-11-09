@@ -6,10 +6,14 @@ import { PomodoroTicker } from './PomodoroTicker';
 
 @ComponentV2
 export struct PomodoroTimer {
-  @Require @Param phrase:Phrase
+  @Require @Param phrase: Phrase
   @Require @Param pomodoroCount: number
   @Require @Param pomodoroSeconds: number
+  // Timer当前的状态
   @Require @Param state: TimerState
+  // Timer已经准备好进入下一个状态（例如已经完成对应的动画了）
+  @Param onReadyToRun?: () => void = undefined
+  @Param onReadyToStop?: () => void = undefined
   @Param onLongTap?: () => void = undefined
   @Param onTap?: () => void = undefined
   @Local isCircleBouncing: boolean = false
@@ -27,24 +31,6 @@ export struct PomodoroTimer {
     begin: 1,
     end: 1.05,
   })
-
-  @Monitor("isCircleBouncing")
-  onCircleBouncing() {
-    if (this.isCircleBouncing) {
-      this.bouncingAnim.cancel()
-      this.bouncingAnim.onFrame = (value) => this.circleScale = value
-      this.bouncingAnim.onFinish = () => {
-        this.isCircleBouncing = false
-        this.isAnimating = false
-      }
-      this.bouncingAnim.onCancel = () => {
-        this.isCircleBouncing = false
-        this.isAnimating = false
-      }
-      this.bouncingAnim.play()
-      this.isAnimating = true
-    }
-  }
 
   private clearTimer() {
     if (this.tickTimer !== undefined) {
@@ -87,36 +73,68 @@ export struct PomodoroTimer {
     this.schedule(tick)
   }
 
+  @Monitor("isCircleBouncing")
+  onCircleBouncing() {
+    if (this.isCircleBouncing) {
+      this.bouncingAnim.cancel()
+      this.bouncingAnim.onFrame = (value) => this.circleScale = value
+      this.bouncingAnim.onFinish = () => {
+        this.isCircleBouncing = false
+        this.isAnimating = false
+
+        if (this.state.type == "prerun") {
+          this.onReadyToRun && this.onReadyToRun()
+        } else if (this.state.type === "prestop") {
+          this.onReadyToStop && this.onReadyToStop()
+        }
+      }
+      this.bouncingAnim.onCancel = () => {
+        this.isCircleBouncing = false
+        this.isAnimating = false
+
+        if (this.state.type == "prerun") {
+          this.onReadyToRun && this.onReadyToRun()
+        } else if (this.state.type === "prestop") {
+          this.onReadyToStop && this.onReadyToStop()
+        }
+      }
+      this.bouncingAnim.play()
+    }
+  }
+
   @Monitor('state')
-  onStatusChanged(monitor: IMonitor) {
+  onStateChanged(monitor: IMonitor) {
     let before = monitor.value<TimerState>('state')!.before
     let after = monitor.value<TimerState>('state')!.now
 
     this.clearTimer()
 
     // 启动bouncing动画
-    if ((before.type === 'stopped' && after.type === 'running') || after.type === 'stopped') {
-      this.isCircleBouncing = true
-    } else {
-      this.isCircleBouncing = false
-    }
+    // if ((before.type === 'stopped' && after.type === 'running') || after.type === 'stopped') {
+    //   this.isCircleBouncing = true
+    // } else {
+    //   this.isCircleBouncing = false
+    // }
+    this.isCircleBouncing = false
 
-    if ((before.type === 'running' || before.type === 'paused') && after.type === 'stopped') {
+    if ((before.type === 'running' || before.type === 'paused') && after.type === 'prestop') {
       // 从运行或暂停状态到停止状态，先运行扇形动画
       this.isAnimating = true
       this.scheduleCycleAnimation(before.elapsedTimeMS, before.totalTimeMS, before.totalTimeMS, () => {
-        this.isAnimating = false
+        // 然后再进行边框弹跳动画
+        this.isCircleBouncing = true
       })
-    } else if (before.type === 'stopped' && after.type === 'running') {
+    } else if (before.type === 'stopped' && after.type === 'prerun') {
       // 启动时钟前，先显示扇形动画
       this.isAnimating = true
       this.scheduleCycleAnimation(after.totalTimeMS, 0, after.totalTimeMS, () => {
-        this.isAnimating = false
+        // 然后再进行边框弹跳动画
+        this.isCircleBouncing = true
       })
     }
 
-    if (!this.isAnimating && after.type === "running"){
-      this.drawProgress(after.elapsedTimeMS,after.totalTimeMS)
+    if (!this.isAnimating && after.type === "running") {
+      this.drawProgress(after.elapsedTimeMS, after.totalTimeMS)
     }
   }
 
@@ -188,7 +206,7 @@ export struct PomodoroTimer {
       PomodoroTicker({
         tickLength: PomodoroTicker.MAX_TICK_LENGTH,
         ticksCount: this.pomodoroCount,
-        tickAnim: !this.isCircleBouncing && (this.state.type === 'stopped' || this.state.type === 'finished')
+        // tickAnim: !this.isCircleBouncing && (this.state.type === 'stopped' || this.state.type === 'finished')
       })
 
       Column() {

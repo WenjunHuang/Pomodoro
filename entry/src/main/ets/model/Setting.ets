@@ -1,6 +1,7 @@
 import { todayString } from '../utils/DateTimeUtils'
 import { ThemeColors } from './ThemeColors'
 import { PersistenceV2 } from '@kit.ArkUI'
+import { Phrase } from './Pomodoro'
 
 export enum SoundTheme {
   NOTIFICATION,
@@ -38,7 +39,17 @@ export function makePlainSettingFrom(setting: Setting): Setting {
     firstStartApp: setting.firstStartApp,
     dailyFinished: new Map(setting.dailyFinished)
   }
+}
 
+export function getPhraseTotalMS(setting: Setting, phrase: Phrase): number {
+  switch (phrase) {
+    case Phrase.POMODORO:
+      return setting.pomodoroSeconds * setting.pomodoro * 1000
+    case Phrase.SHORT_BREAK:
+      return setting.pomodoroSeconds * setting.break * 1000
+    case Phrase.LONG_BREAK:
+      return setting.pomodoroSeconds * setting.longBreak * 1000
+  }
 }
 
 @ObservedV2
