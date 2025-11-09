@@ -14,6 +14,7 @@ import { worker } from '@kit.ArkTS'
 import { WorkerEvent } from '../workers/TimerWorker'
 import { postCommandToWorker } from '../utils/WorkerUtils'
 import { Logger } from '../utils/LogUtil'
+import { LiveViewController } from '../utils/LiveViewUtils'
 
 
 @Builder
@@ -202,6 +203,25 @@ export struct PomodoroClockPage {
               } else {
                 this.phrase = workerEvent.phrase
                 this.timerState = workerEvent.state
+                if (this.settings.showLiveView) {
+                  if ((workerEvent.event === "onStarted" && this.timerState.type === "running") ||
+                    (workerEvent.event === "onRunning" && this.timerState.type === "running")) {
+                    if (this.phrase === Phrase.POMODORO) {
+                      LiveViewController.startOrUpdateLiveView($r("app.string.setting_pomodoro"),
+                        this.timerState.totalTimeMS - this.timerState.elapsedTimeMS, "working.svg", false)
+                    } else if (this.phrase === Phrase.SHORT_BREAK) {
+                      LiveViewController.startOrUpdateLiveView($r("app.string.setting_break"),
+                        this.timerState.totalTimeMS - this.timerState.elapsedTimeMS, "break.svg", false)
+                    } else {
+                      LiveViewController.startOrUpdateLiveView($r("app.string.setting_long_break"),
+                        this.timerState.totalTimeMS - this.timerState.elapsedTimeMS, "break.svg", false)
+                    }
+                  } else if (workerEvent.event === "onPaused") {
+                    LiveViewController.pauseTimer()
+                  } else if (workerEvent.event === "onResumed") {
+                    LiveViewController.continueTimer()
+                  }
+                }
               }
             }
           }
