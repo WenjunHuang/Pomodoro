@@ -4,6 +4,7 @@ import { Logger } from './LogUtil';
 import { ContextUtil } from './ContextUtil';
 import { POMODORO_CLOCK_PAGE } from '../pages/Pages';
 import { common } from '@kit.AbilityKit';
+import { toMinuteSecondString } from './DateTimeUtils';
 
 const UPDATE_INTERVAL = 2 * 1000
 
@@ -11,16 +12,16 @@ export class LiveViewController {
   private static defaultView: liveViewManager.LiveView | undefined = undefined;
   private static capsuleColor: string = '#FFFFFFFF';
   private static starting: boolean = false;
-  private context: common.UIAbilityContext
+  public static context: common.UIAbilityContext
   private static lastUpdatedTime: number | undefined = undefined
 
-  constructor(context: common.UIAbilityContext) {
-    this.context = context
-  }
-
-  public async startLiveView(title: ResourceStr, time: number, desPic: string, paused: boolean): Promise<void> {
-    if (LiveViewController.defaultView || LiveViewController.starting) {
+  public static async startOrUpdateLiveView(title: ResourceStr, time: number, desPic: string,
+    paused: boolean): Promise<void> {
+    if (LiveViewController.starting) {
       return;
+    }
+    if (LiveViewController.defaultView) {
+      return LiveViewController.updateLiveView(title, time, desPic, paused)
     }
 
     LiveViewController.starting = true;
@@ -33,7 +34,7 @@ export class LiveViewController {
 
     //update liveView parameters
     LiveViewController.lastUpdatedTime = time
-    LiveViewController.defaultView = await this.buildDefaultView(title, time,desPic, paused);
+    LiveViewController.defaultView = await LiveViewController.buildDefaultView(title, time, desPic, paused);
     if (!LiveViewController.defaultView) {
       Logger.warn('buildDefaultView Failed.')
       return;
@@ -50,42 +51,46 @@ export class LiveViewController {
     }
   }
 
-  public async updateTimer(title: ResourceStr, time: number, paused: boolean): Promise<void> {
+  public static async updateLiveView(title: ResourceStr, time: number, desPic: string, paused: boolean): Promise<void> {
     try {
       if (!LiveViewController.defaultView) {
         return
       }
       if (LiveViewController.lastUpdatedTime) {
-        if ((time - LiveViewController.lastUpdatedTime) < UPDATE_INTERVAL) {
+        if (Math.abs(time - LiveViewController.lastUpdatedTime) < UPDATE_INTERVAL) {
           return
         }
-        LiveViewController.lastUpdatedTime = time
       }
+      LiveViewController.lastUpdatedTime = time
 
-      LiveViewController.defaultView.timer = {
-        time: time,
-        isPaused: paused,
+      // LiveViewController.defaultView.timer = {
+      //   time: time,
+      //   isPaused: paused,
+      // }
 
-      }
       LiveViewController.defaultView.liveViewData.capsule = {
-        type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
+        content: toMinuteSecondString(time),
+        // type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
+        type: liveViewManager.CapsuleType.CAPSULE_TYPE_TEXT,
         status: 1,
-        time: time,
-        isPaused: paused,
+        // time: time,
+        // isPaused: paused,
       }
       LiveViewController.defaultView.liveViewData.primary.layoutData = {
         //auxiliary area
-        title: await this.getString(title),
+        // title: await LiveViewController.getString(title),
         layoutType: liveViewManager.LayoutType.LAYOUT_TYPE_PICKUP,
         // content: '${placeholder.timer}',
-        // descPic: "timer.png"
+        content: toMinuteSecondString(time),
+        // descPic: desPic
       }
-
-      await this.getString(title)
+      // LiveViewController.defaultView.liveViewData.primary.title =
+      //   await LiveViewController.getString($r("app.string.running"))
 
       if (LiveViewController.defaultView.sequence) {
         LiveViewController.defaultView.sequence += 1;
       }
+      Logger.info('Request updateLiveView: %{public}s',JSON.stringify(LiveViewController.defaultView))
       await liveViewManager.updateLiveView(LiveViewController.defaultView);
     } catch (e) {
       const err: BusinessError = e as BusinessError;
@@ -93,7 +98,7 @@ export class LiveViewController {
     }
   }
 
-  public async pauseTimer(): Promise<void> {
+  public static async pauseTimer(): Promise<void> {
     Logger.info('pauseTimer');
     try {
       //is liveView parameters initialized
@@ -101,17 +106,17 @@ export class LiveViewController {
         return;
       }
       //update liveView parameters
-      LiveViewController.defaultView.timer = {
-        isPaused: true
-      }
+      // LiveViewController.defaultView.timer = {
+      //   isPaused: true
+      // }
 
       LiveViewController.defaultView.liveViewData.primary.content =
-        [{ text: await this.getString($r("app.string.paused")) }]
-      LiveViewController.defaultView.liveViewData.capsule = {
-        type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
-        status: 1,
-        isPaused: true,
-      }
+        [{ text: await LiveViewController.getString($r("app.string.paused")) }]
+      // LiveViewController.defaultView.liveViewData.capsule = {
+      //   type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
+      //   status: 1,
+      //   isPaused: true,
+      // }
       if (LiveViewController.defaultView.sequence) {
         LiveViewController.defaultView.sequence += 1;
       }
@@ -123,7 +128,7 @@ export class LiveViewController {
     }
   }
 
-  public async continueTimer(): Promise<void> {
+  public static async continueTimer(): Promise<void> {
     Logger.info('continueTimer');
     try {
       //is liveView parameters initialized
@@ -135,7 +140,7 @@ export class LiveViewController {
         isPaused: false
       }
       LiveViewController.defaultView.liveViewData.primary.content =
-        [{ text: await this.getString($r("app.string.running")) }]
+        [{ text: await LiveViewController.getString($r("app.string.running")) }]
       LiveViewController.defaultView.liveViewData.capsule = {
         type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
         status: 1,
@@ -152,7 +157,7 @@ export class LiveViewController {
     }
   }
 
-  public async stopLiveView(): Promise<void> {
+  public static async stopLiveView(): Promise<void> {
     try {
       //live view is disabled
       if (!await LiveViewController.isLiveViewEnabled() || !LiveViewController.defaultView) {
@@ -177,6 +182,10 @@ export class LiveViewController {
     }
   }
 
+  public static resetLastUpdatedTime() {
+    LiveViewController.lastUpdatedTime = undefined
+  }
+
   private static async isLiveViewEnabled(): Promise<boolean> {
     //live view is disabled
     let result: boolean = false;
@@ -189,34 +198,34 @@ export class LiveViewController {
     return result;
   }
 
-  private async buildDefaultView(title: ResourceStr,
+  private static async buildDefaultView(title: ResourceStr,
     time: number,
     desPic: string,
     paused: boolean): Promise<liveViewManager.LiveView | undefined> {
     try {
       return {
         id: 1, // liveView ID, generated by the developer
-        event: "TIMER", // application scenarios of liveView:TIMER。
+        event: "PICK_UP", // application scenarios of liveView:TIMER。
         sequence: 1, //serial number
         isMute: true, //is ringing reminder
-        timer: {
-          time: time,
-          isPaused: paused,
-          isCountdown: true
-        },
+        // timer: {
+        //   time: time,
+        //   isPaused: paused,
+        //   isCountdown: true
+        // },
         liveViewData: {
           primary: {
-            title: await this.getString($r("app.string.app_name")),
+            title: await LiveViewController.getString($r("app.string.app_name")),
             keepTime: 0,
             clickAction: await ContextUtil.buildWantAgent(POMODORO_CLOCK_PAGE),
             layoutData: {
               //auxiliary area
-              title: await this.getString(title),
+              title: "def",//await LiveViewController.getString(title),
               layoutType: liveViewManager.LayoutType.LAYOUT_TYPE_PICKUP,
-              content: '${placeholder.timer}',
+              content: toMinuteSecondString(time),//'${placeholder.timer}',
               descPic: desPic
             },
-            content: [{ text: await this.getString($r("app.string.running")) }],
+            content: [{ text: "abc"}],//await LiveViewController.getString($r("app.string.running")) }],
             extensionData: {
               //expansion Zone
               type: liveViewManager.ExtensionType.EXTENSION_TYPE_DEFAULT,
@@ -224,13 +233,15 @@ export class LiveViewController {
           },
           capsule: {
             //capsule
-            type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
+            type: liveViewManager.CapsuleType.CAPSULE_TYPE_TEXT,//liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
             status: 1,
             icon: 'foreground.png',
+            title: await LiveViewController.getString(title),
             backgroundColor: LiveViewController.capsuleColor,
-            time: time,
-            isCountdown: true,
-            isPaused: paused,
+            content: toMinuteSecondString(time)
+            // time: time,
+            // isCountdown: true,
+            // isPaused: paused,
           }
         }
       }
@@ -241,9 +252,9 @@ export class LiveViewController {
     }
   }
 
-  private async getString(value: ResourceStr): Promise<string> {
+  static async getString(value: ResourceStr): Promise<string> {
     if ((value as Resource).id !== undefined) {
-      return await this.context.resourceManager.getStringValue(value as Resource)
+      return await LiveViewController.context.resourceManager.getStringValue(value as Resource)
     } else {
       return value as string
     }

@@ -9,6 +9,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { deviceInfo, BusinessError } from '@kit.BasicServicesKit';
 import type { common, Want } from '@kit.AbilityKit';
 import BuildProfile from 'BuildProfile';
+import { LiveViewController } from '../utils/LiveViewUtils';
 
 @Builder
 export function SettingPageBuilder() {
@@ -75,6 +76,12 @@ export struct SettingPage {
     [ThemeColors.Crimson, "", ThemeColors.Brown, "", ThemeColors.LightBlue, "", ThemeColors.Charcoal, "",
       ThemeColors.Emerald]
   ]
+
+  @Monitor("settings.showLiveView")
+  onShowLiveViewChanged(monitor:IMonitor){
+    if (!monitor.value<boolean>("settings.showLiveView")?.now)
+      LiveViewController.stopLiveView()
+  }
 
   build() {
     NavDestination() {

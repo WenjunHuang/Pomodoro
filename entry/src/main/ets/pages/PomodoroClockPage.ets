@@ -27,7 +27,6 @@ export struct PomodoroClockPage {
   @Local phrase: Phrase = Phrase.POMODORO
   @Local autoStart: boolean = false
   @Local timerState: TimerState = { type: "stopped" }
-  private liveViewController = new LiveViewController(this.getUIContext().getHostContext()! as common.UIAbilityContext)
 
   /**
    * 构建单个进度点
@@ -143,7 +142,7 @@ export struct PomodoroClockPage {
         onStarted: async (event) => {
           if (event.type === "running") {
             if (this.settings.showLiveView) {
-              await this.liveViewController.startLiveView($r("app.string.setting_pomodoro"),
+              await LiveViewController.startOrUpdateLiveView($r("app.string.setting_pomodoro"),
                 event.totalTimeMS - event.elapsedTimeMS, "working.svg", false)
             }
           }
@@ -151,25 +150,25 @@ export struct PomodoroClockPage {
         onRunning: async (event) => {
           if (event.type === "running") {
             if (this.settings.showLiveView) {
-              await this.liveViewController.updateTimer($r("app.string.setting_pomodoro"),
-                event.totalTimeMS - event.elapsedTimeMS, false)
+              await LiveViewController.startOrUpdateLiveView($r("app.string.setting_pomodoro"),
+                event.totalTimeMS - event.elapsedTimeMS, "working.svg", false)
             }
           }
         },
         onPaused: async (event) => {
-          await this.liveViewController.pauseTimer()
+          await LiveViewController.pauseTimer()
         },
         onResumed: async (event) => {
-          await this.liveViewController.continueTimer()
+          await LiveViewController.continueTimer()
         },
-        onCancelled: async (event) => {
-          await this.liveViewController.stopLiveView()
+        onCancelled: () => {
+          LiveViewController.resetLastUpdatedTime()
         },
         onStateChanged: async (state) => {
           this.timerState = state
           if (state.type === 'finished') {
             playFinishedSound(this.getUIContext().getHostContext()!!)
-            await this.liveViewController.stopLiveView()
+            LiveViewController.resetLastUpdatedTime()
 
             let finished = this.settings.increaseTodayFinishedPomodoroCount()
             this.finishedPomodoros = finished
@@ -218,7 +217,7 @@ export struct PomodoroClockPage {
         onStarted: async (event) => {
           if (event.type === "running") {
             if (this.settings.showLiveView) {
-              await this.liveViewController.startLiveView($r("app.string.setting_break"),
+              await LiveViewController.startOrUpdateLiveView($r("app.string.setting_break"),
                 event.totalTimeMS - event.elapsedTimeMS, "break.svg", false)
             }
           }
@@ -226,25 +225,25 @@ export struct PomodoroClockPage {
         onRunning: async (event) => {
           if (event.type === "running") {
             if (this.settings.showLiveView) {
-              await this.liveViewController.updateTimer($r("app.string.setting_break"),
-                event.totalTimeMS - event.elapsedTimeMS, false)
+              await LiveViewController.startOrUpdateLiveView($r("app.string.setting_break"),
+                event.totalTimeMS - event.elapsedTimeMS, "break.svg", false)
             }
           }
         },
         onPaused: async (event) => {
-          await this.liveViewController.pauseTimer()
+          await LiveViewController.pauseTimer()
         },
         onResumed: async (event) => {
-          await this.liveViewController.continueTimer()
+          await LiveViewController.continueTimer()
         },
-        onCancelled: async (event) => {
-          await this.liveViewController.stopLiveView()
+        onCancelled: () => {
+          LiveViewController.resetLastUpdatedTime()
         },
         onStateChanged: async (state) => {
           this.timerState = state
           if (state.type === 'finished') {
             playFinishedSound(this.getUIContext().getHostContext()!!)
-            await this.liveViewController.stopLiveView()
+            LiveViewController.resetLastUpdatedTime()
 
             this.phrase = Phrase.POMODORO
             this.timerState = { type: "stopped" }
@@ -266,33 +265,33 @@ export struct PomodoroClockPage {
         onStarted: async (event) => {
           if (event.type === "running") {
             if (this.settings.showLiveView) {
-              await this.liveViewController.startLiveView($r("app.string.setting_long_break"),
+              await LiveViewController.startOrUpdateLiveView($r("app.string.setting_long_break"),
                 event.totalTimeMS - event.elapsedTimeMS, "break.svg", false)
             }
           }
         },
+        onCancelled: () => {
+          LiveViewController.resetLastUpdatedTime()
+        },
         onRunning: async (event) => {
           if (event.type === "running") {
             if (this.settings.showLiveView) {
-              await this.liveViewController.updateTimer($r("app.string.setting_long_break"),
-                event.totalTimeMS - event.elapsedTimeMS, false)
+              await LiveViewController.startOrUpdateLiveView($r("app.string.setting_long_break"),
+                event.totalTimeMS - event.elapsedTimeMS, "break.svg", false)
             }
           }
         },
         onPaused: async (event) => {
-          await this.liveViewController.pauseTimer()
+          await LiveViewController.pauseTimer()
         },
         onResumed: async (event) => {
-          await this.liveViewController.continueTimer()
-        },
-        onCancelled: async (event) => {
-          await this.liveViewController.stopLiveView()
+          await LiveViewController.continueTimer()
         },
         onStateChanged: async (state) => {
           this.timerState = state
           if (state.type === 'finished') {
             playFinishedSound(this.getUIContext().getHostContext()!!)
-            await this.liveViewController.stopLiveView()
+            LiveViewController.resetLastUpdatedTime()
 
             this.phrase = Phrase.POMODORO
             this.timerState = { type: "stopped" }

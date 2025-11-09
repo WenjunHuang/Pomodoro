@@ -5,6 +5,11 @@
       "copyCodeResource": {
         "enable": false
       }
+    },
+    "sourceOption": {
+      "workers": [
+        './src/main/ets/workers/PomodoroWorker.ets'
+      ]
     }
   },
   "buildOptionSet": [

@@ -33,6 +33,13 @@ export function remainingSecondsWithoutMinutes(elapsedMS:number,totalMS:number):
   return seconds % 60
 }
 
+export function toMinuteSecondString(time:number):string {
+  let minutes = Math.floor(time / 60000)
+  let seconds = Math.ceil(time / 1000) % 60
+
+  return `${minutes.toString().padStart(2,"0")}:${seconds.toString().padStart(2,"0")}`
+}
+
 export function todayString(): string {
   let d = new Date()
   return `${d.getFullYear()}/${d.getMonth()}/${d.getDay()}`

@@ -3,6 +3,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppStorageV2, window } from '@kit.ArkUI';
 import { ContextUtil } from '../utils/ContextUtil';
 import { Logger } from '../utils/LogUtil';
+import { LiveViewController } from '../utils/LiveViewUtils';
 
 const DOMAIN = 0x0000;
 
@@ -10,6 +11,7 @@ export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     try {
       ContextUtil.applicationContext = this.context.getApplicationContext();
+      LiveViewController.context = this.context
       this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
       if (want.parameters?.page) {
         ContextUtil.wantUrl = want.parameters.page as string
