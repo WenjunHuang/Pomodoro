@@ -29,7 +29,7 @@ export function remainingMinutes(elapsedMS:number,totalMS:number):number {
  */
 export function remainingSecondsWithoutMinutes(elapsedMS:number,totalMS:number):number {
   const remainingMS = totalMS - elapsedMS
-  const seconds = Math.floor(remainingMS / 1000)
+  const seconds = Math.ceil(remainingMS / 1000)
   return seconds % 60
 }
 

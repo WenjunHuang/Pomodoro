@@ -5,18 +5,20 @@ import { ContextUtil } from './ContextUtil';
 import { POMODORO_CLOCK_PAGE } from '../pages/Pages';
 import { common } from '@kit.AbilityKit';
 
+const UPDATE_INTERVAL = 2 * 1000
+
 export class LiveViewController {
   private static defaultView: liveViewManager.LiveView | undefined = undefined;
   private static capsuleColor: string = '#FFFFFFFF';
-  private static pickUpColor: string = '#FF0A59F7';
   private static starting: boolean = false;
   private context: common.UIAbilityContext
+  private static lastUpdatedTime: number | undefined = undefined
 
   constructor(context: common.UIAbilityContext) {
     this.context = context
   }
 
-  public async startLiveView(title: ResourceStr, time: number, themeColor: string, paused: boolean): Promise<void> {
+  public async startLiveView(title: ResourceStr, time: number, desPic: string, paused: boolean): Promise<void> {
     if (LiveViewController.defaultView || LiveViewController.starting) {
       return;
     }
@@ -30,8 +32,8 @@ export class LiveViewController {
     }
 
     //update liveView parameters
-    LiveViewController.pickUpColor = themeColor
-    LiveViewController.defaultView = await this.buildDefaultView(title, time, paused);
+    LiveViewController.lastUpdatedTime = time
+    LiveViewController.defaultView = await this.buildDefaultView(title, time,desPic, paused);
     if (!LiveViewController.defaultView) {
       Logger.warn('buildDefaultView Failed.')
       return;
@@ -53,9 +55,17 @@ export class LiveViewController {
       if (!LiveViewController.defaultView) {
         return
       }
+      if (LiveViewController.lastUpdatedTime) {
+        if ((time - LiveViewController.lastUpdatedTime) < UPDATE_INTERVAL) {
+          return
+        }
+        LiveViewController.lastUpdatedTime = time
+      }
+
       LiveViewController.defaultView.timer = {
         time: time,
-        isPaused: paused
+        isPaused: paused,
+
       }
       LiveViewController.defaultView.liveViewData.capsule = {
         type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
@@ -67,8 +77,8 @@ export class LiveViewController {
         //auxiliary area
         title: await this.getString(title),
         layoutType: liveViewManager.LayoutType.LAYOUT_TYPE_PICKUP,
-        content: '${placeholder.timer}',
-        descPic: "timer.png"
+        // content: '${placeholder.timer}',
+        // descPic: "timer.png"
       }
 
       await this.getString(title)
@@ -91,16 +101,17 @@ export class LiveViewController {
         return;
       }
       //update liveView parameters
-      // LiveViewController.defaultView.timer = {
-      //   isPaused: true
-      // }
+      LiveViewController.defaultView.timer = {
+        isPaused: true
+      }
+
       LiveViewController.defaultView.liveViewData.primary.content =
         [{ text: await this.getString($r("app.string.paused")) }]
-      // LiveViewController.defaultView.liveViewData.capsule = {
-      //   type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
-      //   status: 1,
-      //   isPaused: true,
-      // }
+      LiveViewController.defaultView.liveViewData.capsule = {
+        type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
+        status: 1,
+        isPaused: true,
+      }
       if (LiveViewController.defaultView.sequence) {
         LiveViewController.defaultView.sequence += 1;
       }
@@ -120,16 +131,16 @@ export class LiveViewController {
         return;
       }
       //update liveView parameters
-      // LiveViewController.defaultView.timer = {
-      //   isPaused: false
-      // }
+      LiveViewController.defaultView.timer = {
+        isPaused: false
+      }
       LiveViewController.defaultView.liveViewData.primary.content =
         [{ text: await this.getString($r("app.string.running")) }]
-      // LiveViewController.defaultView.liveViewData.capsule = {
-      //   type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
-      //   status: 1,
-      //   isPaused: false,
-      // }
+      LiveViewController.defaultView.liveViewData.capsule = {
+        type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
+        status: 1,
+        isPaused: false,
+      }
       if (LiveViewController.defaultView.sequence) {
         LiveViewController.defaultView.sequence += 1;
       }
@@ -153,18 +164,6 @@ export class LiveViewController {
       if (LiveViewController.defaultView.sequence) {
         LiveViewController.defaultView.sequence += 1;
       }
-      // LiveViewController.defaultView.liveViewData.primary.title = '已结束'
-      // LiveViewController.defaultView.liveViewData.primary.layoutData = {
-      //   layoutType: liveViewManager.LayoutType.LAYOUT_TYPE_PICKUP,
-      //   underlineColor: LiveViewController.pickUpColor,
-      // };
-      // LiveViewController.defaultView.timer = {
-      //   isPaused: true
-      // };
-      // LiveViewController.defaultView.liveViewData.capsule = {
-      //   type: liveViewManager.CapsuleType.CAPSULE_TYPE_TEXT,
-      //   status: 1
-      // }
       //destroy the liveView
       Logger.info('Request stopLiveView req: %{public}s', JSON.stringify(LiveViewController.defaultView));
       const result = await liveViewManager.stopLiveView(LiveViewController.defaultView);
@@ -174,6 +173,7 @@ export class LiveViewController {
       Logger.error('Request stopLiveView error: %{public}d %{public}s', err.code, err.message);
     } finally {
       LiveViewController.defaultView = undefined
+      LiveViewController.lastUpdatedTime = undefined
     }
   }
 
@@ -191,6 +191,7 @@ export class LiveViewController {
 
   private async buildDefaultView(title: ResourceStr,
     time: number,
+    desPic: string,
     paused: boolean): Promise<liveViewManager.LiveView | undefined> {
     try {
       return {
@@ -206,14 +207,14 @@ export class LiveViewController {
         liveViewData: {
           primary: {
             title: await this.getString($r("app.string.app_name")),
-            keepTime: 15,
+            keepTime: 0,
             clickAction: await ContextUtil.buildWantAgent(POMODORO_CLOCK_PAGE),
             layoutData: {
               //auxiliary area
               title: await this.getString(title),
               layoutType: liveViewManager.LayoutType.LAYOUT_TYPE_PICKUP,
               content: '${placeholder.timer}',
-              descPic: "timer.png"
+              descPic: desPic
             },
             content: [{ text: await this.getString($r("app.string.running")) }],
             extensionData: {

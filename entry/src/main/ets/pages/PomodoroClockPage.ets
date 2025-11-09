@@ -144,7 +144,7 @@ export struct PomodoroClockPage {
           if (event.type === "running") {
             if (this.settings.showLiveView) {
               await this.liveViewController.startLiveView($r("app.string.setting_pomodoro"),
-                event.totalTimeMS - event.elapsedTimeMS, this.settings.colorTheme, true)
+                event.totalTimeMS - event.elapsedTimeMS, "working.svg", false)
             }
           }
         },
@@ -152,7 +152,7 @@ export struct PomodoroClockPage {
           if (event.type === "running") {
             if (this.settings.showLiveView) {
               await this.liveViewController.updateTimer($r("app.string.setting_pomodoro"),
-                event.totalTimeMS - event.elapsedTimeMS, true)
+                event.totalTimeMS - event.elapsedTimeMS, false)
             }
           }
         },
@@ -219,7 +219,7 @@ export struct PomodoroClockPage {
           if (event.type === "running") {
             if (this.settings.showLiveView) {
               await this.liveViewController.startLiveView($r("app.string.setting_break"),
-                event.totalTimeMS - event.elapsedTimeMS, this.settings.colorTheme, true)
+                event.totalTimeMS - event.elapsedTimeMS, "break.svg", false)
             }
           }
         },
@@ -227,7 +227,7 @@ export struct PomodoroClockPage {
           if (event.type === "running") {
             if (this.settings.showLiveView) {
               await this.liveViewController.updateTimer($r("app.string.setting_break"),
-                event.totalTimeMS - event.elapsedTimeMS, true)
+                event.totalTimeMS - event.elapsedTimeMS, false)
             }
           }
         },
@@ -267,7 +267,7 @@ export struct PomodoroClockPage {
           if (event.type === "running") {
             if (this.settings.showLiveView) {
               await this.liveViewController.startLiveView($r("app.string.setting_long_break"),
-                event.totalTimeMS - event.elapsedTimeMS, this.settings.colorTheme, true)
+                event.totalTimeMS - event.elapsedTimeMS, "break.svg", false)
             }
           }
         },
@@ -275,7 +275,7 @@ export struct PomodoroClockPage {
           if (event.type === "running") {
             if (this.settings.showLiveView) {
               await this.liveViewController.updateTimer($r("app.string.setting_long_break"),
-                event.totalTimeMS - event.elapsedTimeMS, true)
+                event.totalTimeMS - event.elapsedTimeMS, false)
             }
           }
         },

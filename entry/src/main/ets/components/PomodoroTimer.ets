@@ -220,6 +220,8 @@ export struct PomodoroTimer {
         type: 'running',
         elapsedTimeMS: 0, totalTimeMS: this.pomodoroCount * this.pomodoroSeconds * 1000
       }
+      this.onStateChanged && this.onStateChanged(this.state)
+      this.onStarted && this.onStarted(this.state)
     }
   }
 
