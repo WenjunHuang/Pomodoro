@@ -39,7 +39,7 @@
     "routerMap": "$profile:router_map",
     "requestPermissions": [
       {
-        "name": "ohos.permission.VIBRATE"
+        "name": "ohos.permission.VIBRATE",
       },
     ],
   },

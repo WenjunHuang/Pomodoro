@@ -8,7 +8,12 @@ import {
 } from '../model/Setting'
 import { PersistenceV2 } from '@kit.ArkUI'
 import { getDisabledColor } from '../utils/ColorUtils'
-import { padNumber, remainingMinutes, remainingSecondsWithoutMinutes } from '../utils/DateTimeUtils'
+import {
+  padNumber,
+  remainingMinutes,
+  remainingSecondsWithoutMinutes,
+  toMinuteSecondString
+} from '../utils/DateTimeUtils'
 import { Phrase, TimerState } from '../model/Pomodoro'
 import { worker } from '@kit.ArkTS'
 import { WorkerEvent } from '../workers/TimerWorker'
@@ -69,7 +74,7 @@ export struct PomodoroClockPage {
       if (todayFinishedPomodoroCount(this.settings) > this.settings.dailyGoal) {
         Text(`+${todayFinishedPomodoroCount(this.settings) - this.settings.dailyGoal}`)
           .phraseTextStyle()
-          .margin({bottom:8})
+          .margin({ bottom: 8 })
       }
       Row() {
         ForEach(Array.from({ length: 3 }), (_: number, i) => {
@@ -96,9 +101,7 @@ export struct PomodoroClockPage {
         .phraseTextStyle()
         .margin({ bottom: 8 })
       if (this.timerState.type === "running" || this.timerState.type === 'paused') {
-        Text(`${remainingMinutes(this.timerState.elapsedTimeMS,
-          this.timerState.totalTimeMS)}:${padNumber(remainingSecondsWithoutMinutes(this.timerState.elapsedTimeMS,
-          this.timerState.totalTimeMS), 2)}`)
+        Text(`${toMinuteSecondString(this.timerState.totalTimeMS - this.timerState.elapsedTimeMS)}`)
           .phraseTextStyle()
       }
     }
@@ -188,7 +191,7 @@ export struct PomodoroClockPage {
                   let finished = increaseTodayFinishedPomodoroCount(this.settings)
                   if (finished >= this.settings.dailyGoal && !this.shownDailyGoal) {
                     this.shownDailyGoal = true
-                    this.timerState = {type:"stopped"}
+                    this.timerState = { type: "stopped" }
                     this.pageInfos.pushPathByName(DAILY_GOAL_PAGE, null)
                     return
                   }
