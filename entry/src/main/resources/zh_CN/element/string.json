@@ -1,0 +1,180 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "番茄钟"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "番茄钟"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "番茄钟"
+    },
+    {
+      "name": "setting_pomodoro",
+      "value": "番茄钟"
+    },
+    {
+      "name": "setting_durations",
+      "value": "时长设置"
+    },
+    {
+      "name": "setting_break",
+      "value": "短休息"
+    },
+    {
+      "name": "setting_long_break",
+      "value": "长休息"
+    },
+    {
+      "name": "setting_color_themes",
+      "value": "颜色主题"
+    },
+    {
+      "name": "setting_sound_themes",
+      "value": "声音主题"
+    },
+    {
+      "name": "setting_notification_sound",
+      "value": "通知提示音"
+    },
+    {
+      "name": "setting_alarm_sound",
+      "value": "闹钟提示音"
+    },
+    {
+      "name": "setting_other_preferences",
+      "value": "其他偏好设置"
+    },
+    {
+      "name": "setting_pomodoros_until_long_break",
+      "value": "长休息间隔（番茄钟数）"
+    },
+    {
+      "name": "setting_daily_goal",
+      "value": "每日目标"
+    },
+    {
+      "name": "setting_vibrate",
+      "value": "振动反馈"
+    },
+    {
+      "name": "setting_autostart_breaks",
+      "value": "自动开始休息"
+    },
+    {
+      "name": "setting_autostart_pomodoros",
+      "value": "自动开始番茄钟"
+    },
+    {
+      "name": "setting_show_liveview",
+      "value": "显示实况窗"
+    },
+    {
+      "name": "setting_keep_phone_awake",
+      "value": "保持屏幕常亮"
+    },
+    {
+      "name": "setting_howto",
+      "value": "使用帮助"
+    },
+    {
+      "name": "setting_rate_us",
+      "value": "给我们评分"
+    },
+    {
+      "name": "min",
+      "value": "分钟"
+    },
+    {
+      "name": "reset",
+      "value": "重置"
+    },
+    {
+      "name": "app_name",
+      "value": "番茄钟"
+    },
+    {
+      "name": "onboarding_description_1",
+      "value": "时间块工作法是一种科学规划时间、助力提升成果的高效策略。它能为工作流程构建清晰框架，助您专注于单一任务，有效减少干扰并对抗拖延。如今，全球开发者、设计师、作家与学生群体都在实践这一方法。"
+    },
+    {
+      "name": "onboarding_description_2",
+      "value": "首先选定你要完成的具体任务。接着清空周围干扰源——比如合上无关网页、调静音手机，然后启动25分钟倒计时，便全心投入工作直至计时结束。"
+    },
+    {
+      "name": "onboarding_description_3",
+      "value": "沉浸式投入工作核心，外界纷扰皆可暂缓。25分钟专注冲刺，高效推进目标达成。"
+    },
+    {
+      "name": "onboarding_description_4",
+      "value": "完成25分钟专注后，进行5分钟短暂休息：可选择做几组俯卧撑，或前往户外呼吸新鲜空气。此环节旨在快速恢复精力，为下一阶段工作储备动力。"
+    },
+    {
+      "name": "onboarding_description_5",
+      "value": "完成四轮专注工作（每轮25分钟全情投入+5分钟短暂休息）后，进行15-30分钟的长休。随着身体逐渐适应这一节奏，您的效率将显著提升——科学研究表明，规律的间歇训练能强化大脑的注意力持久性，形成可持续的高效工作模式。"
+    },
+    {
+      "name": "onboarding_description_6",
+      "value": "通过践行这一科学的时间管理方法，您不仅能持续产出高质量成果，更能保持持久的思维活力。随着大脑逐渐适应\"25分钟深度专注+5分钟能量更新\"的生理节律（即番茄工作法核心机制），您的认知耐力与任务执行精准度将显著提升——这一效果已被神经科学研究证实，与大脑注意力恢复周期密切相关。"
+    },
+    {
+      "name": "onboarding_title_1",
+      "value": "什么是<b>时间块工作法？</b>"
+    },
+    {
+      "name": "onboarding_title_2",
+      "value": "<b>如何</b>运作？"
+    },
+    {
+      "name": "onboarding_title_3",
+      "value": "<b>保持专注</b>，完成工作。"
+    },
+    {
+      "name": "onboarding_title_4",
+      "value": "然后<b>休息一下！</b>"
+    },
+    {
+      "name": "onboarding_title_5",
+      "value": "<b>重复</b>这个循环"
+    },
+    {
+      "name": "onboarding_title_6",
+      "value": "有哪些<b>好处？</b>"
+    },
+    {
+      "name": "onboarding_start_button_label",
+      "value": "立即启用番茄工作法"
+    },
+    {
+      "name": "setting_howtouse",
+      "value": "使用方法"
+    },
+    {
+      "name": "setting_rateus",
+      "value": "评价"
+    },
+    {
+      "name": "daily_goal",
+      "value": "今日里程碑已达成！"
+    },
+    {
+      "name": "paused",
+      "value": "暂停"
+    },
+    {
+      "name": "running",
+      "value": "运行中"
+    },
+    {
+      "name": "time_remaining",
+      "value": "剩余时间"
+    },
+    {
+      "name": "waiting_to_start",
+      "value": "等待启动"
+    }
+  ]
+}

@@ -20,6 +20,9 @@
         "startWindowIcon": "$media:startIcon",
         "startWindowBackground": "$color:start_window_background",
         "exported": true,
+        "backgroundModes": [
+          "audioPlayback"
+        ],
         "skills": [
           {
             "entities": [
@@ -32,19 +35,12 @@
         ]
       }
     ],
-    "extensionAbilities": [
+    "extensionAbilities": [],
+    "routerMap": "$profile:router_map",
+    "requestPermissions": [
       {
-        "name": "EntryBackupAbility",
-        "srcEntry": "./ets/entrybackupability/EntryBackupAbility.ets",
-        "type": "backup",
-        "exported": false,
-        "metadata": [
-          {
-            "name": "ohos.extension.backup",
-            "resource": "$profile:backup_config"
-          }
-        ],
-      }
-    ]
-  }
+        "name": "ohos.permission.VIBRATE",
+      },
+    ],
+  },
 }

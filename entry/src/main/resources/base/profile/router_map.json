@@ -1,0 +1,24 @@
+{
+  "routerMap": [
+    {
+      "name": "PomodoroClock",
+      "pageSourceFile": "src/main/ets/pages/PomodoroClockPage.ets",
+      "buildFunction": "PomodoroClockPageBuilder"
+    },
+    {
+      "name": "Setting",
+      "pageSourceFile": "src/main/ets/pages/SettingPage.ets",
+      "buildFunction": "SettingPageBuilder"
+    },
+    {
+      "name": "HowTo",
+      "pageSourceFile": "src/main/ets/pages/HowToPage.ets",
+      "buildFunction": "HowToPageBuilder"
+    },
+    {
+      "name": "DailyGoal",
+      "pageSourceFile": "src/main/ets/pages/DailyGoalPage.ets",
+      "buildFunction": "DailyGoalPageBuilder"
+    }
+  ]
+}

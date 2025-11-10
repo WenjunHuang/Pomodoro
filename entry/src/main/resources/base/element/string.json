@@ -2,15 +2,179 @@
   "string": [
     {
       "name": "module_desc",
-      "value": "module description"
+      "value": "Pomodoro"
     },
     {
       "name": "EntryAbility_desc",
-      "value": "description"
+      "value": "Pomodoro"
     },
     {
       "name": "EntryAbility_label",
-      "value": "label"
+      "value": "Pomodoro"
+    },
+    {
+      "name": "setting_pomodoro",
+      "value": "POMODORO"
+    },
+    {
+      "name": "setting_durations",
+      "value": "DURATIONS"
+    },
+    {
+      "name": "setting_break",
+      "value": "BREAK"
+    },
+    {
+      "name": "setting_long_break",
+      "value": "LONG BREAK"
+    },
+    {
+      "name": "setting_color_themes",
+      "value": "COLOR THEMES"
+    },
+    {
+      "name": "setting_sound_themes",
+      "value": "SOUND THEMES"
+    },
+    {
+      "name": "setting_notification_sound",
+      "value": "NOTIFICATION SOUND"
+    },
+    {
+      "name": "setting_alarm_sound",
+      "value": "ALARM SOUND"
+    },
+    {
+      "name": "setting_other_preferences",
+      "value": "OTHER PREFERENCES"
+    },
+    {
+      "name": "setting_pomodoros_until_long_break",
+      "value": "POMODOROS UNTIL LONG BREAK"
+    },
+    {
+      "name": "setting_daily_goal",
+      "value": "DAILY GOAL"
+    },
+    {
+      "name": "setting_vibrate",
+      "value": "VIBRATE"
+    },
+    {
+      "name": "setting_autostart_breaks",
+      "value": "AUTOSTART BREAKS"
+    },
+    {
+      "name": "setting_autostart_pomodoros",
+      "value": "AUTOSTART POMODOROS"
+    },
+    {
+      "name": "setting_show_liveview",
+      "value": "SHOW LIVE VIEW"
+    },
+    {
+      "name": "setting_keep_phone_awake",
+      "value": "KEEP PHONE AWAKE"
+    },
+    {
+      "name": "setting_howto",
+      "value": "HOW TO USE?"
+    },
+    {
+      "name": "setting_rate_us",
+      "value": "RATE US"
+    },
+    {
+      "name": "min",
+      "value": "MIN"
+    },
+    {
+      "name": "reset",
+      "value": "Reset"
+    },
+    {
+      "name": "onboarding_description_1",
+      "value": "Working in time blocks is an effective strategy for using time wisely and achieving greater results. It helps you bring structure to your work process allows you to focus on one task at a time, limit distraction and procrastination. It is used by developers, designers, writers and students all around the world."
+    },
+    {
+      "name": "onboarding_description_2",
+      "value": "First choose a task that you need to complete. Eliminate all distraction and set timer for 25 minutes and work until it rings."
+    },
+    {
+      "name": "onboarding_description_3",
+      "value": "Immerse yourself in your work with laser focus. The 25-minute Pomodoro cycle empowers you to complete tasks uninterrupted, allowing the world to pause while you achieve measurable progress."
+    },
+    {
+      "name": "onboarding_description_4",
+      "value": "After 25 minutes of focus, grab a 5-minute breather—do some quick push-ups or head out for a lungful of fresh air. This short reset is designed to replenish your energy for the next sprint."
+    },
+    {
+      "name": "onboarding_description_5",
+      "value": "Complete four Pomodoro cycles (25 minutes focused work + 5 minutes breaks) before taking a structured 15-30 minute break. Scientifically validated, this rhythm trains your brain to enter 'deep work' states more efficiently over time, creating a sustainable productivity loop"
+    },
+    {
+      "name": "onboarding_description_6",
+      "value": "By adopting this structured approach, you'll not only achieve consistent high-quality outcomes but also cultivate sustained mental vitality. As your brain adapts to the 25-minute focus/5-minute renewal cycle (the core Pomodoro mechanism), you'll experience enhanced cognitive endurance and task execution precision—a phenomenon validated by neuroscience research on attention restoration."
+    },
+    {
+      "name": "onboarding_title_1",
+      "value": "What is <b>Time Blocking?</b>"
+    },
+    {
+      "name": "onboarding_title_2",
+      "value": "<b>How</b> does it work?"
+    },
+    {
+      "name": "onboarding_title_3",
+      "value": "<b>Stay focused</b>, do your work."
+    },
+    {
+      "name": "onboarding_title_4",
+      "value": "Then take a <b>break!</b>"
+    },
+    {
+      "name": "onboarding_title_5",
+      "value": "<b>Repeat</b> this cycle"
+    },
+    {
+      "name": "onboarding_title_6",
+      "value": "What are the <b>benefits?</b>"
+    },
+    {
+      "name": "app_name",
+      "value": "Pomodoro"
+    },
+    {
+      "name": "onboarding_start_button_label",
+      "value": "Start Using Pomodoro now"
+    },
+    {
+      "name": "setting_howtouse",
+      "value": "HOW TO USE?"
+    },
+    {
+      "name": "setting_rateus",
+      "value": "RATE US"
+    },
+    {
+      "name": "daily_goal",
+      "value": "Daily Goal Achieved!"
+    },
+    {
+      "name": "paused",
+      "value": "Paused"
+    },
+    {
+      "name": "running",
+      "value": "Running"
+    },
+    {
+      "name": "time_remaining",
+      "value": "Time Remaining"
+    },
+    {
+      "name": "waiting_to_start",
+      "value": "Waiting to Start"
     }
   ]
 }
