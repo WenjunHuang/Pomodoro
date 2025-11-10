@@ -1,7 +1,8 @@
 import { ErrorEvent, MessageEvents, ThreadWorkerGlobalScope, worker } from '@kit.ArkTS';
-import { TICK_MS, TimerState, Phrase } from '../model/Pomodoro';
+import { Phrase, TICK_MS, TimerState } from '../model/Pomodoro';
 import { getPhraseTotalMS, Setting } from '../model/Setting';
 import { Logger } from '../utils/LogUtil';
+import { getRealTimeMS } from '../utils/DateTimeUtils';
 
 const workerPort: ThreadWorkerGlobalScope = worker.workerPort;
 
@@ -9,6 +10,7 @@ let timerState: TimerState = { type: "stopped" }
 let tickTimer: number | undefined = undefined
 let setting: Setting | undefined = undefined
 let phrase: Phrase | undefined = undefined
+let startScheduleTime: number = 0
 
 type WorkerEventType = "onStarted" | "onRunning" | "onCancelled" | "onFinished" | "onPaused" | "onResumed"
 
@@ -48,8 +50,8 @@ function schedule(fn: () => void) {
   tickTimer = setTimeout(fn, TICK_MS)
 }
 
-function startTicking() {
-  const tick = () => {
+async function startTicking() {
+  const tick = async () => {
     if (timerState.type !== 'running') {
       clearTimer()
       return
@@ -60,13 +62,16 @@ function startTicking() {
       let event: WorkerEvent = { event: "onFinished", phrase: phrase!, state: timerState }
       postEvent(event)
     } else {
-      timerState.elapsedTimeMS += TICK_MS
-
+      let now = await getRealTimeMS()
+      timerState.elapsedTimeMS += (now - startScheduleTime)
       let event: WorkerEvent = { event: "onRunning", phrase: phrase!, state: timerState }
       postEvent(event)
+
+      startScheduleTime = now
       schedule(tick)
     }
   }
+  startScheduleTime = await getRealTimeMS()
   schedule(tick)
 }
 
@@ -87,7 +92,7 @@ function postEvent(event: WorkerEvent) {
  *
  * @param event message data
  */
-workerPort.onmessage = (event: MessageEvents) => {
+workerPort.onmessage = async (event: MessageEvents) => {
   let command = event.data as WorkerCommand
   if (command.type === "start") {
     phrase = command.phrase
@@ -102,7 +107,7 @@ workerPort.onmessage = (event: MessageEvents) => {
       state: timerState
     }
     postEvent(event)
-    startTicking()
+    await startTicking()
   } else if (command.type === "pause") {
     if (timerState.type === "running") {
       timerState = { type: "paused", elapsedTimeMS: timerState.elapsedTimeMS, totalTimeMS: timerState.totalTimeMS }

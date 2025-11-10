@@ -1,3 +1,4 @@
+import { deviceInfo, systemDateTime } from "@kit.BasicServicesKit"
 
 
 /**
@@ -16,7 +17,7 @@ export function padNumber(num: number, length: number): string {
  * @param totalMS - 总时间（毫秒）
  * @returns 剩余的分钟数
  */
-export function remainingMinutes(elapsedMS:number,totalMS:number):number {
+export function remainingMinutes(elapsedMS: number, totalMS: number): number {
   const remainingMS = totalMS - elapsedMS
   return Math.floor(remainingMS / 60000)
 }
@@ -27,21 +28,30 @@ export function remainingMinutes(elapsedMS:number,totalMS:number):number {
  * @param totalMS - 总时间（毫秒）
  * @returns 除去分钟后的剩余秒数
  */
-export function remainingSecondsWithoutMinutes(elapsedMS:number,totalMS:number):number {
+export function remainingSecondsWithoutMinutes(elapsedMS: number, totalMS: number): number {
   const remainingMS = totalMS - elapsedMS
   const seconds = Math.ceil(remainingMS / 1000)
   return seconds % 60
 }
 
-export function toMinuteSecondString(time:number):string {
+export function toMinuteSecondString(time: number): string {
   let seconds = Math.ceil(time / 1000)
   let minutes = Math.floor(seconds / 60)
   let remainingSeconds = seconds % 60
 
-  return `${minutes.toString().padStart(2,"0")}:${remainingSeconds.toString().padStart(2,"0")}`
+  return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`
 }
 
 export function todayString(): string {
   let d = new Date()
   return `${d.getFullYear()}/${d.getMonth()}/${d.getDay()}`
+}
+
+export async function getRealTimeMS(): Promise<number> {
+  if (deviceInfo.sdkApiVersion >= 18) {
+    return systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false)
+  } else {
+    return await systemDateTime.getRealTime(false)
+  }
+
 }

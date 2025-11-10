@@ -1,9 +1,10 @@
 import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { AppStorageV2, window } from '@kit.ArkUI';
+import { window } from '@kit.ArkUI';
 import { ContextUtil } from '../utils/ContextUtil';
 import { Logger } from '../utils/LogUtil';
 import { LiveViewController } from '../utils/LiveViewUtils';
+import { pushService } from '@kit.PushKit';
 
 const DOMAIN = 0x0000;
 
@@ -18,6 +19,12 @@ export default class EntryAbility extends UIAbility {
       }
     } catch (error) {
     }
+
+    pushService.getToken().then((pushToken) => {
+      Logger.info('Succeeded in getting push token: %{public}s', pushToken);
+    }).catch((err: BusinessError<Object>) => {
+      Logger.error('Failed to get push token: %{public}d %{public}s', err.code, err.message);
+    })
   }
 
   onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {

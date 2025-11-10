@@ -5,6 +5,7 @@ import { ContextUtil } from './ContextUtil';
 import { POMODORO_CLOCK_PAGE } from '../pages/Pages';
 import { common } from '@kit.AbilityKit';
 import { toMinuteSecondString } from './DateTimeUtils';
+import { pushService } from '@kit.PushKit';
 
 const UPDATE_INTERVAL = 1 * 1000;
 
