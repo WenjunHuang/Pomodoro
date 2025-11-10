@@ -191,6 +191,8 @@ export struct HowToPage {
     }
     .backgroundColor(Color.White)
     .hideTitleBar(true)
+    .width("100%")
+    .height("100%")
     .onBackPressed(() => {
       if (this.pageInfos.size() > 1) {
         this.pageInfos.pop()

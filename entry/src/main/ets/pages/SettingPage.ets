@@ -6,9 +6,8 @@ import { vibrator } from '@kit.SensorServiceKit';
 import { HOW_TO_PAGE } from './Pages';
 import { commentManager } from '@kit.AppGalleryKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { deviceInfo, BusinessError } from '@kit.BasicServicesKit';
+import { BusinessError, deviceInfo } from '@kit.BasicServicesKit';
 import type { common, Want } from '@kit.AbilityKit';
-import BuildProfile from 'BuildProfile';
 import { LiveViewController } from '../utils/LiveViewUtils';
 
 @Builder
@@ -185,11 +184,7 @@ export struct SettingPage {
             isSwitchOffSelected: !this.settings.vibrate,
             onSwitchOn: async () => {
               this.settings.vibrate = true
-              try {
-                await vibrator.startVibration({ type: "time", duration: 2000 }, { usage: "notification" })
-              } catch (e) {
-                console.error(JSON.stringify(e))
-              }
+
             },
             onSwitchOff: () => {
               this.settings.vibrate = false

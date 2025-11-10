@@ -15,6 +15,8 @@ import { WorkerEvent } from '../workers/TimerWorker'
 import { postCommandToWorker } from '../utils/WorkerUtils'
 import { Logger } from '../utils/LogUtil'
 import { LiveViewController, LiveViewState } from '../utils/LiveViewUtils'
+import { playFinishedSound, playVibrate } from '../utils/SoundUtils'
+import { DAILY_GOAL_PAGE } from './Pages'
 
 
 @Builder
@@ -26,9 +28,7 @@ export function PomodoroClockPageBuilder() {
 export struct PomodoroClockPage {
   @Local settings: Setting = PersistenceV2.connect(Setting, () => new Setting())!
   @Consumer('pageInfos') pageInfos: NavPathStack = new NavPathStack()
-  // @Consumer('timerWorker') timerWorker: worker.ThreadWorker =
-  //   new worker.ThreadWorker("entry/ets/workers/TimerWorker.ets")
-  @Local finishedPomodoros: number = 0
+  @Local shownDailyGoal: boolean = false
   @Local phrase: Phrase = Phrase.POMODORO
   @Local autoStart: boolean = false
   @Local timerState: TimerState = { type: "stopped" }
@@ -65,21 +65,28 @@ export struct PomodoroClockPage {
    */
   @Builder
   private buildProgressRow(slot: number) {
-    Row() {
-      ForEach(Array.from({ length: 3 }), (_: number, i) => {
-        // 计算当前点的索引
-        if (slot * 3 + i < this.settings.dailyGoal) {
-          // 构建进度点
-          this.buildProgressDot(slot * 3 + i)
-        } else {
-          // 构建占位点
-          this.buildPlaceholderDot()
-        }
-      })
+    Column() {
+      if (todayFinishedPomodoroCount(this.settings) > this.settings.dailyGoal) {
+        Text(`+${todayFinishedPomodoroCount(this.settings) - this.settings.dailyGoal}`)
+          .phraseTextStyle()
+          .margin({bottom:8})
+      }
+      Row() {
+        ForEach(Array.from({ length: 3 }), (_: number, i) => {
+          // 计算当前点的索引
+          if (slot * 3 + i < this.settings.dailyGoal) {
+            // 构建进度点
+            this.buildProgressDot(slot * 3 + i)
+          } else {
+            // 构建占位点
+            this.buildPlaceholderDot()
+          }
+        })
+      }
+      .width(28)
+      .flexShrink(1)
+      .justifyContent(FlexAlign.SpaceEvenly)
     }
-    .width(28)
-    .flexShrink(1)
-    .justifyContent(FlexAlign.SpaceEvenly)
   }
 
   @Builder
@@ -172,8 +179,19 @@ export struct PomodoroClockPage {
               this.timerState = { type: "prestop" }
             } else {
               if (workerEvent.event == "onFinished") {
+                playFinishedSound(this.getUIContext().getHostContext()!)
+                if (this.settings.vibrate) {
+                  playVibrate()
+                }
+
                 if (workerEvent.phrase === Phrase.POMODORO) {
                   let finished = increaseTodayFinishedPomodoroCount(this.settings)
+                  if (finished >= this.settings.dailyGoal && !this.shownDailyGoal) {
+                    this.shownDailyGoal = true
+                    this.timerState = {type:"stopped"}
+                    this.pageInfos.pushPathByName(DAILY_GOAL_PAGE, null)
+                    return
+                  }
                   if (finished % this.settings.pomodorosUntilLongBreak === 0) {
                     this.phrase = Phrase.LONG_BREAK
                     if (this.settings.autostartBreaks) {
@@ -328,6 +346,8 @@ export struct PomodoroClockPage {
       .height('100%')
     }
     .backgroundColor(this.settings.colorTheme)
+    .width("100%")
+    .height("100%")
     .hideTitleBar(true)
   }
 }

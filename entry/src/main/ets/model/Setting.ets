@@ -54,7 +54,7 @@ export function getPhraseTotalMS(setting: Setting, phrase: Phrase): number {
 
 @ObservedV2
 export class Setting {
-  @Trace pomodoroSeconds: number = 10
+  @Trace pomodoroSeconds: number = 60
   @Trace colorTheme: string = ThemeColors.Coral
   @Trace soundThemes: SoundTheme = SoundTheme.NOTIFICATION
   @Trace pomodorosUntilLongBreak: number = 4
