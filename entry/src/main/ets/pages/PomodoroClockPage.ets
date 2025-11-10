@@ -14,7 +14,7 @@ import { worker } from '@kit.ArkTS'
 import { WorkerEvent } from '../workers/TimerWorker'
 import { postCommandToWorker } from '../utils/WorkerUtils'
 import { Logger } from '../utils/LogUtil'
-import { LiveViewController } from '../utils/LiveViewUtils'
+import { LiveViewController, LiveViewState } from '../utils/LiveViewUtils'
 
 
 @Builder
@@ -181,6 +181,8 @@ export struct PomodoroClockPage {
                         { type: "start", phrase: Phrase.LONG_BREAK, setting: makePlainSettingFrom(this.settings) })
                     } else {
                       this.timerState = { type: "stopped" }
+                      LiveViewController.startOrUpdateLiveView($r("app.string.setting_long_break"),
+                        getPhraseTotalMS(this.settings, this.phrase), "break.svg", LiveViewState.WAITING_TO_START)
                     }
                   } else {
                     this.phrase = Phrase.SHORT_BREAK
@@ -189,6 +191,8 @@ export struct PomodoroClockPage {
                         { type: "start", phrase: Phrase.SHORT_BREAK, setting: makePlainSettingFrom(this.settings) })
                     } else {
                       this.timerState = { type: "stopped" }
+                      LiveViewController.startOrUpdateLiveView($r("app.string.setting_break"),
+                        getPhraseTotalMS(this.settings, this.phrase), "break.svg", LiveViewState.WAITING_TO_START)
                     }
                   }
                 } else {
@@ -198,6 +202,8 @@ export struct PomodoroClockPage {
                       { type: "start", phrase: Phrase.POMODORO, setting: makePlainSettingFrom(this.settings) })
                   } else {
                     this.timerState = { type: "stopped" }
+                    LiveViewController.startOrUpdateLiveView($r("app.string.setting_pomodoro"),
+                      getPhraseTotalMS(this.settings, this.phrase), "working.svg", LiveViewState.WAITING_TO_START)
                   }
                 }
               } else {
@@ -208,13 +214,13 @@ export struct PomodoroClockPage {
                     (workerEvent.event === "onRunning" && this.timerState.type === "running")) {
                     if (this.phrase === Phrase.POMODORO) {
                       LiveViewController.startOrUpdateLiveView($r("app.string.setting_pomodoro"),
-                        this.timerState.totalTimeMS - this.timerState.elapsedTimeMS, "working.svg", false)
+                        this.timerState.totalTimeMS - this.timerState.elapsedTimeMS, "working.svg")
                     } else if (this.phrase === Phrase.SHORT_BREAK) {
                       LiveViewController.startOrUpdateLiveView($r("app.string.setting_break"),
-                        this.timerState.totalTimeMS - this.timerState.elapsedTimeMS, "break.svg", false)
+                        this.timerState.totalTimeMS - this.timerState.elapsedTimeMS, "break.svg")
                     } else {
                       LiveViewController.startOrUpdateLiveView($r("app.string.setting_long_break"),
-                        this.timerState.totalTimeMS - this.timerState.elapsedTimeMS, "break.svg", false)
+                        this.timerState.totalTimeMS - this.timerState.elapsedTimeMS, "break.svg")
                     }
                   } else if (workerEvent.event === "onPaused") {
                     LiveViewController.pauseTimer()

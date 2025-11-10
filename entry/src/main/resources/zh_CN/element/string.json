@@ -167,6 +167,14 @@
     {
       "name": "running",
       "value": "运行中"
+    },
+    {
+      "name": "time_remaining",
+      "value": "剩余时间"
+    },
+    {
+      "name": "waiting_to_start",
+      "value": "等待启动"
     }
   ]
 }

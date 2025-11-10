@@ -167,6 +167,14 @@
     {
       "name": "running",
       "value": "Running"
+    },
+    {
+      "name": "time_remaining",
+      "value": "Time Remaining"
+    },
+    {
+      "name": "waiting_to_start",
+      "value": "Waiting to Start"
     }
   ]
 }

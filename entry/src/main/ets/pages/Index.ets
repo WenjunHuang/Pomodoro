@@ -9,8 +9,6 @@ import { DAILY_GOAL_PAGE, HOW_TO_PAGE, POMODORO_CLOCK_PAGE } from './Pages';
 @ComponentV2
 export default struct Index {
   @Provider('pageInfos') pageInfos: NavPathStack = new NavPathStack()
-  // @Provider('timerWorker') timerWorker: worker.ThreadWorker =
-  //   new worker.ThreadWorker("entry/ets/workers/TimerWorker.ets")
   @Local settings: Setting = PersistenceV2.connect(Setting, () => new Setting())!
   private firstPage: string = POMODORO_CLOCK_PAGE
 
