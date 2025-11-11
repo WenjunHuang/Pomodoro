@@ -80,7 +80,8 @@ export class LiveViewController {
       LiveViewController.incrementSequence();
 
       Logger.info('Request updateLiveView: %{public}s', JSON.stringify(LiveViewController.defaultView));
-      await liveViewManager.updateLiveView(LiveViewController.defaultView!);
+      let result = await liveViewManager.updateLiveView(LiveViewController.defaultView!);
+      Logger.info('Result updateLiveView: %{public}d %{public}s', result.resultCode, result.message);
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       Logger.error('Request updateLiveView error: %{public}d %{public}s', err.code, err.message);

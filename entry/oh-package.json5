@@ -5,6 +5,8 @@
   "main": "",
   "author": "",
   "license": "",
-  "dependencies": {}
+  "dependencies": {
+    "libtimer_native.so": "file:./src/main/cpp/types/libtimer_native"
+  }
 }
 

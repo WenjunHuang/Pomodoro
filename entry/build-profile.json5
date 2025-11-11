@@ -6,6 +6,11 @@
         "enable": false
       }
     },
+    "externalNativeOptions": {
+      "path": "./src/main/cpp/CMakeLists.txt",
+      "arguments": "",
+      "cppFlags": "",
+    },
     "sourceOption": {
       "workers": [
         "./src/main/ets/workers/TimerWorker.ets"

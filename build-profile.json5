@@ -5,26 +5,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "storeFile": "D:/Work/Pomodoro/signing/app.p12",
-          "storePassword": "0000001BB571BEF0B87E129088DA4A889E29A474E3FE6D53EDFEEE8B7BE673DA49613FBFC8D08B259E54FB",
+          "storeFile": "/Volumes/Outter/Work/Pomodoro/signing/app.p12",
+          "storePassword": "0000001BFBEEA905424EB822F3D0C32F9B8EE3636B9C55EABC5717704849073A5B4DE02EEFDEBC9D3739F6",
           "keyAlias": "release",
-          "keyPassword": "0000001BD614D435F201D0F14A9F8574DABE031147A998C1E6D219CA16D29B3B9B0FC1A4828EE64E960CA0",
+          "keyPassword": "0000001BE988DC4625010E6BB61DC3366E01BCDD2EA4C960168C91F1840356438AF43FFED8C75DC2699BC4",
           "signAlg": "SHA256withECDSA",
-          "profile": "D:/Work/Pomodoro/signing/release_profileRelease.p7b",
-          "certpath": "D:/Work/Pomodoro/signing/release.cer"
-        }
-      },
-      {
-        "name": "develop",
-        "type": "HarmonyOS",
-        "material": {
-          "certpath": "C:\\Users\\rick\\.ohos\\config\\develop_Pomodoro_QEn08t7Nz5u7z2cvN_5gY8Snroi3EqdvS_mFUmZhGHw=.cer",
-          "keyAlias": "debugKey",
-          "keyPassword": "0000001963EC217F8A1149ABC8BC2606A55C71A03077D82925115FF7880253D9CEDFF00EF35B4A1B80",
-          "profile": "C:\\Users\\rick\\.ohos\\config\\develop_Pomodoro_QEn08t7Nz5u7z2cvN_5gY8Snroi3EqdvS_mFUmZhGHw=.p7b",
-          "signAlg": "SHA256withECDSA",
-          "storeFile": "C:\\Users\\rick\\.ohos\\config\\develop_Pomodoro_QEn08t7Nz5u7z2cvN_5gY8Snroi3EqdvS_mFUmZhGHw=.p12",
-          "storePassword": "0000001927020A29945B101A4BE07E9A90CB74E5034D42E88760F8CCC30D23C6B6C9BF93A7AD326B31"
+          "profile": "/Volumes/Outter/Work/Pomodoro/signing/release_profileRelease.p7b",
+          "certpath": "/Volumes/Outter/Work/Pomodoro/signing/release.cer"
         }
       }
     ],
@@ -36,6 +23,7 @@
         "compatibleSdkVersion": "5.0.1(13)",
         "runtimeOS": "HarmonyOS",
         "buildOption": {
+          "nativeCompiler": "BiSheng",
           "strictMode": {
             "caseSensitiveCheck": true,
             "useNormalizedOHMUrl": true

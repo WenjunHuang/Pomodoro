@@ -156,7 +156,7 @@ export struct PomodoroTimer {
       }
       .alignItems(HorizontalAlign.Center)
       .justifyContent(FlexAlign.Center)
-      .padding(20)
+      .padding(28)
       .borderWidth(8)
       .borderRadius('50%')
       .borderColor(Color.Transparent)
@@ -217,7 +217,7 @@ export struct PomodoroTimer {
           .borderWidth(8)
           .borderRadius('50%');
       }
-      .padding(12)
+      .padding(20)
       .width('100%')
       .height('100%');
     }

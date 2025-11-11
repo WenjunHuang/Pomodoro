@@ -3,7 +3,7 @@ import { Phrase, TICK_MS, TimerState } from '../model/Pomodoro';
 import { getPhraseTotalMS, Setting } from '../model/Setting';
 import { Logger } from '../utils/LogUtil';
 import { getRealTimeMS } from '../utils/DateTimeUtils';
-
+import napi from 'libtimer_native.so';
 const workerPort: ThreadWorkerGlobalScope = worker.workerPort;
 
 let timerState: TimerState = { type: "stopped" }
@@ -47,7 +47,7 @@ function clearTimer() {
 }
 
 function schedule(fn: () => void) {
-  tickTimer = setTimeout(fn, TICK_MS)
+  tickTimer = napi.setTimeout(fn, TICK_MS)
 }
 
 async function startTicking() {
@@ -66,6 +66,9 @@ async function startTicking() {
       timerState.elapsedTimeMS += (now - startScheduleTime)
       let event: WorkerEvent = { event: "onRunning", phrase: phrase!, state: timerState }
       postEvent(event)
+      // if (now - startScheduleTime > 1000) {
+        Logger.info("TimerWorker Schedule Running: %{public}d", now - startScheduleTime)
+      // }
 
       startScheduleTime = now
       schedule(tick)
@@ -124,7 +127,7 @@ workerPort.onmessage = async (event: MessageEvents) => {
       postEvent({ event: "onResumed", phrase: phrase!, state: timerState })
       startTicking()
     }
-  } else if (command.type = "cancel") {
+  } else if (command.type === "cancel") {
     if (timerState.type === "running" || timerState.type === "paused") {
       timerState = { type: "stopped" }
       postEvent({ event: "onCancelled", phrase: phrase!, state: timerState })
@@ -149,44 +152,3 @@ workerPort.onmessageerror = (event: MessageEvents) => {
  */
 workerPort.onerror = (event: ErrorEvent) => {
 };
-// onStateChanged: async (state) => {
-//   this.timerState = state
-//   if (state.type === 'finished') {
-//     playFinishedSound(this.getUIContext().getHostContext()!!)
-//     LiveViewController.resetLastUpdatedTime()
-//
-//     let finished = this.settings.increaseTodayFinishedPomodoroCount()
-//     this.finishedPomodoros = finished
-//
-//     if (finished >= this.settings.dailyGoal) {
-//       this.timerState = { type: "stopped" }
-//       this.pageInfos.pushPathByName(DAILY_GOAL_PAGE, null)
-//     } else {
-//       this.timerState = { type: "stopped" }
-//       if (this.finishedPomodoros % this.settings.pomodorosUntilLongBreak == 0) {
-//         // 开始长休
-//         this.phrase = Phrase.LONG_BREAK
-//         if (this.settings.autostartBreaks) {
-//           this.autoStart = true
-//         } else {
-//           this.autoStart = false
-//         }
-//       } else if (this.finishedPomodoros % this.settings.break == 0) {
-//         //开始短休
-//         this.phrase = Phrase.SHORT_BREAK
-//         if (this.settings.autostartBreaks) {
-//           this.autoStart = true
-//         } else {
-//           this.autoStart = false
-//         }
-//       } else {
-//         this.phrase = Phrase.POMODORO
-//         if (this.settings.autostartPomodoros) {
-//           this.autoStart = true
-//         } else {
-//           this.autoStart = false
-//         }
-//       }
-//     }
-//   }
-// },
