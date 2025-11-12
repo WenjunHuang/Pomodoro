@@ -98,6 +98,8 @@ function postEvent(event: WorkerEvent) {
 workerPort.onmessage = async (event: MessageEvents) => {
   let command = event.data as WorkerCommand
   if (command.type === "start") {
+    napi.test()
+
     phrase = command.phrase
     setting = command.setting
 

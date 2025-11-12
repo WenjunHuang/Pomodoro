@@ -21,4 +21,5 @@ add_library(timer_native SHARED
 #find_library(NAPI_LIB napi)
 #target_link_libraries(timer_native PRIVATE ${NAPI_LIB})
 target_link_libraries(timer_native PUBLIC libace_napi.z.so)
+target_link_libraries(timer_native PUBLIC libhilog_ndk.z.so)
 

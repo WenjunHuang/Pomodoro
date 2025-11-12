@@ -7,6 +7,12 @@
 #include <condition_variable>
 #include <atomic>
 #include <chrono>
+#include <hilog/log.h>
+
+/**
+ * 用来测试鸿蒙next对于后台app是如何调度线程的。
+ * 网上资料说是暂停arkts引擎执行导致arkts的setTimeout不会执行，但实际测试发现，其实是系统会暂停运行app的所有线程。所以这个native的setTimeout实现其实没啥用，
+ */
 
 namespace {
 struct TimerTask {
@@ -161,11 +167,27 @@ napi_value ClearTimeout(napi_env env, napi_callback_info info) {
     napi_get_undefined(env, &undefined);
     return undefined;
 }
+
+// 用来测试鸿蒙系统如何调度进入后台运行的app的线程
+// 结果: 没有申请后台执行权限的app，鸿蒙next系统会逐渐（比较快）将线程放入就绪状态（也就是不分配执行时间）
+// 这就导致番茄钟在运行时，如果被放入后台，那么无法正常发送live view和完成
+napi_value Test(napi_env env, napi_callback_info info) {
+    std::thread([]() {
+        while (true) {
+            // domain 0xD002D08 default app domain fallback; tag up to 32 chars
+            OH_LOG_Print(LOG_APP, LOG_INFO, 0xfc99, "timer_native", "Hello Test");
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+    }).detach();
+    napi_value undefined;
+    napi_get_undefined(env, &undefined);
+    return undefined;
+}
+
 napi_value Init(napi_env env, napi_value exports) {
-    napi_property_descriptor desc[] = {
-        {"setTimeout", 0, SetTimeout, 0, 0, 0, napi_default, 0},
-        {"clearTimeout", 0, ClearTimeout, 0, 0, 0, napi_default, 0},
-    };
+    napi_property_descriptor desc[] = {{"setTimeout", 0, SetTimeout, 0, 0, 0, napi_default, 0},
+                                       {"clearTimeout", 0, ClearTimeout, 0, 0, 0, napi_default, 0},
+                                       {"test", 0, Test, 0, 0, 0, napi_default, 0}};
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
     return exports;
 }
